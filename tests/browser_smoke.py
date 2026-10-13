@@ -1,7 +1,25 @@
 """Real browser checks in an isolated profile; requires Playwright and system Chromium."""
 from playwright.sync_api import sync_playwright
-import json, os, tempfile
-URL = os.environ.get('SMENA_TEST_URL', 'http://127.0.0.1:8080')
+import json, os, tempfile, subprocess, socket, secrets, time, atexit
+from pathlib import Path
+URL = os.environ.get('SMENA_TEST_URL')
+PASSWORD = os.environ.get('SMENA_TEST_PASSWORD')
+if not URL:
+    temp_server = tempfile.TemporaryDirectory(prefix='orbita-browser-server-')
+    sock = socket.socket(); sock.bind(('127.0.0.1',0)); port=sock.getsockname()[1]; sock.close()
+    PASSWORD=secrets.token_urlsafe(24)
+    environment={**os.environ,'PORT':str(port),'HOST':'127.0.0.1','DATA_DIR':temp_server.name,'ADMIN_PASSWORD':PASSWORD}
+    process=subprocess.Popen(['node','server/local.js'],cwd=Path(__file__).resolve().parent.parent,env=environment,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    def cleanup():
+        process.terminate(); process.wait(timeout=5); temp_server.cleanup()
+    atexit.register(cleanup)
+    URL=f'http://127.0.0.1:{port}'
+    for _ in range(100):
+        try:
+            with socket.create_connection(('127.0.0.1',port),timeout=.1): break
+        except OSError: time.sleep(.05)
+    else: raise RuntimeError('Test server did not start')
+if not PASSWORD: raise RuntimeError('SMENA_TEST_PASSWORD is required when testing an existing server')
 KEY = 'smena-space-v2'
 with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') as tmp:
     browser = p.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
@@ -10,16 +28,21 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(URL)
     page.wait_for_selector('.alliance-card')
+    page.get_by_role('button',name='Вход организатора',exact=True).click()
+    page.locator('[name=password]').fill(PASSWORD)
+    page.locator('form .submit').click()
+    page.wait_for_selector('.access-banner.admin')
     page.screenshot(path='/tmp/orbita-desktop.png', full_page=True)
     assert page.locator('.alliance-card').count() == 4
     def snapshot():
-        return page.evaluate(f'JSON.parse(localStorage.getItem("{KEY}"))')
+        return page.request.get(URL+'/api/state').json()['state']
     def first_alliance():
         return snapshot()['alliances'][0]
     def go(target):
         page.locator(f'nav [data-page="{target}"]').click()
-    def submit():
+    def submit(success=True):
         page.locator('dialog form .submit').click()
+        if success: page.locator('dialog form').wait_for(state='detached')
     def close():
         page.get_by_role('button', name='Закрыть', exact=True).click()
     def settings():
@@ -68,6 +91,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     submit()
     record = page.locator('.planet-record').filter(has=page.get_by_role('heading', name='Аванпост «Альфа»'))
     record.locator('[data-action=claimBonus]').click()
+    record.locator('[data-action=claimBonus][disabled]').wait_for()
     assert record.locator('[data-action=claimBonus]').is_disabled()
     assert first_alliance()['caps'] == 2980
     assert first_alliance()['planets']['cadia']['actionPoints'] == 6
@@ -87,7 +111,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     go('interface')
     page.locator('[data-action=editInterface][data-id=alliance-1]').first.click()
     page.locator('[name=charge]').fill('150')
-    submit()
+    submit(False)
     assert page.locator('.form-error').inner_text()
     page.locator('[name=maxCharge]').fill('200')
     page.locator('[name=gravitons]').fill('9')
@@ -113,7 +137,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     submit()
     assert first_alliance()['interface']['gravitons'] == 10
     item_action('item','upgrade-27')
-    submit()
+    submit(False)
     assert 'Максимум' in page.locator('.form-error').inner_text()
     close()
     # Unknown equipment prices can be configured, and the edited price is used.
@@ -175,11 +199,13 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     assert exported['alliances'][0]['inventory']['tool-6'] == 4
     page.get_by_role('button',name='Начать чистую космическую смену').click()
     page.get_by_role('button',name='Удалить данные и начать смену').click()
+    page.locator('dialog[open]').wait_for(state='detached')
     assert snapshot()['alliances'] == []
     assert snapshot()['itemOverrides']['equip-1']['price'] == 250
     settings()
     page.locator('#import-file').set_input_files(backup)
     page.locator('#confirm-import').click()
+    page.locator('dialog[open]').wait_for(state='detached')
     assert first_alliance()['caps'] == 1430
     assert len(snapshot()['alliances']) == 4
     go('alliances')
@@ -196,7 +222,10 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     mobile = browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce')
     mobile.on('pageerror',lambda error:errors.append(str(error)))
     mobile.goto(URL)
-    mobile.wait_for_selector('.alliance-card')
+    mobile.wait_for_selector('.access-banner.viewer')
+    assert mobile.locator('[data-action=adjust]').count()==0
+    assert mobile.request.put(URL+'/api/state',data={'revision':0,'state':snapshot()},headers={'Origin':URL}).status==401
+    assert mobile.request.get(URL+'/api/state').json()['state']['alliances'][0]['caps']==1430
     mobile.screenshot(path='/tmp/orbita-mobile.png',full_page=True)
     assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth')
     assert mobile.locator('.sidebar').bounding_box()['x'] + 230 <= 0
@@ -204,6 +233,10 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         mobile.get_by_role('button',name='Открыть меню').click()
         mobile.locator(f'nav [data-page="{target}"]').click()
         assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth'),target
+    page.get_by_role('button',name='Выйти',exact=True).click()
+    page.get_by_role('button',name='Вход организатора',exact=True).wait_for()
+    assert page.locator('.page-heading [data-action=adjust]').count()==0
+    assert page.request.get(URL+'/api/session').json()['role']=='viewer'
     assert not errors,errors
     print('PASS: currency/XP/roles, event awards, all three planets, one-time bonuses, interface limits, purchases, edited prices, consuming craft, recipe review, tool levels, search, XP thresholds, backups, reset, new alliances/children and all mobile pages. No JavaScript errors.')
     browser.close()
