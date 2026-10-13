@@ -1,0 +1,30 @@
+const paths = {
+ grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+ people:'<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m3 10v-3a6 6 0 0 0-3-5"/>',
+ flag:'<path d="M5 22V3m0 1c4-4 10 4 14 0v10c-4 4-10-4-14 0"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ settings:'<path d="m9 3-1 3-3 1-2 4 2 2v4l4 2 3-1 3 1 4-2v-4l2-2-2-4-3-1-1-3Z"/><circle cx="12" cy="12" r="3"/>',
+ chevron:'<path d="m9 5 7 7-7 7"/>', down:'<path d="m6 9 6 6 6-6"/>', plus:'<path d="M12 5v14M5 12h14"/>', arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',
+ spark:'<path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/>',
+ trophy:'<path d="M7 3h10v5a5 5 0 0 1-10 0Zm5 10v6m-4 2h8M7 5H3v3a4 4 0 0 0 4 4m10-7h4v3a4 4 0 0 1-4 4"/>',
+ check:'<path d="m5 12 4 4L19 6"/>', search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>', close:'<path d="m6 6 12 12M6 18 18 6"/>',
+ book:'<path d="M3 4c3-1 6 0 9 2 3-2 6-3 9-2v15c-3-1-6 0-9 2-3-2-6-3-9-2Zm9 2v15"/>',
+ download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>', menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+ orbit:'<circle cx="12" cy="12" r="5"/><ellipse cx="12" cy="12" rx="11" ry="4" transform="rotate(-35 12 12)"/><circle cx="20" cy="5" r="1" fill="currentColor"/>',
+ rocket:'<path d="M14 4c3-2 7-1 7-1s1 4-1 7l-6 7-7-7ZM7 10 3 11v6l4-1m7 1-1 4h6l1-4M7 18l-3 3m1-5-3 3m6 1-3 3"/><circle cx="16" cy="8" r="2"/>',
+ coin:'<circle cx="12" cy="12" r="9"/><path d="M14 8h-3a4 4 0 0 0 0 8h3m-3-10v2m0 8v2"/>',
+ bolt:'<path d="m13 2-9 12h7l-1 8 10-12h-7Z"/>',
+ wrench:'<path d="M14 4a6 6 0 0 0-7 7L3 17a3 3 0 0 0 4 4l6-6a6 6 0 0 0 7-7l-4 4-4-4Z"/>',
+ leaf:'<path d="M4 20c-2-9 3-16 16-16 0 13-7 18-16 16Zm0 0L16 8"/>',
+ compass:'<circle cx="12" cy="12" r="9"/><path d="m16 8-3 5-5 3 3-5Z"/>',
+ key:'<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-3-3 3-3m-6 0 3-3"/>',
+ trending:'<path d="m3 17 6-6 4 4 8-10m-6 0h6v6"/>',
+ box:'<path d="m12 3 9 5v9l-9 5-9-5V8Zm0 19V12m-9-4 9 4 9-4m-14-2 9 5"/>',
+ edit:'<path d="m16 3 5 5-12 12-6 1 1-6Zm-3 3 5 5"/>',
+ shield:'<path d="m12 3 8 3v6c0 5-8 10-8 10S4 17 4 12V6Z"/>',
+ trash:'<path d="M3 6h18M9 6V3h6v3m-10 0 1 15h12l1-15M10 10v7m4-7v7"/>',
+ mass:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+};
+export const icon = (name, cls='') => `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.spark}</svg>`;
+export function emblem(color='blue') {const shapes={blue:'<path d="m30 8 5 14 15 8-15 5-5 17-5-17-15-5 15-8Z"/>',purple:'<path d="m30 10 19 11v19L30 51 11 40V21Z"/><path d="m30 18 12 8v10l-12 8-12-8V26Z" fill="none" stroke="currentColor" stroke-width="2"/>',orange:'<path d="m30 8 8 13 14 4-9 12 1 15-14-6-14 6 1-15-9-12 14-4Z"/>',green:'<path d="M30 8 48 19v20L30 52 12 39V19Z"/><path d="m21 30 7 7 12-15" fill="none" stroke="currentColor" stroke-width="3"/>',pink:'<path d="m30 8 18 22-18 22L12 30Z"/>'};return `<svg viewBox="0 0 60 60" aria-hidden="true">${shapes[color]||shapes.blue}</svg>`;}
+export function starMap(){return `<svg class="starmap" viewBox="0 0 590 310" aria-hidden="true"><defs><radialGradient id="planet-main"><stop stop-color="#b8c1f5"/><stop offset=".55" stop-color="#8f95ca"/><stop offset="1" stop-color="#525881"/></radialGradient><linearGradient id="planet-small" x2="1" y2="1"><stop stop-color="#d6b7a4"/><stop offset="1" stop-color="#826762"/></linearGradient><linearGradient id="planet-blue" x2="1" y2="1"><stop stop-color="#9ecbcc"/><stop offset="1" stop-color="#406b81"/></linearGradient></defs><g fill="none" stroke="#7c85ac" stroke-opacity=".22"><ellipse cx="310" cy="152" rx="235" ry="99" transform="rotate(-16 310 152)"/><ellipse cx="310" cy="152" rx="185" ry="69" transform="rotate(-16 310 152)"/><ellipse cx="310" cy="152" rx="126" ry="38" transform="rotate(-16 310 152)"/></g><g fill="#b3bad6"><circle cx="93" cy="80" r="1.5"/><circle cx="174" cy="35" r="1"/><circle cx="236" cy="256" r="1.5"/><circle cx="497" cy="225" r="1"/><circle cx="524" cy="59" r="1.5"/><circle cx="348" cy="24" r="1"/><circle cx="444" cy="288" r="1"/><circle cx="138" cy="216" r="1"/><circle cx="480" cy="110" r="1.5"/></g><circle cx="325" cy="142" r="69" fill="url(#planet-main)"/><path d="M274 129q43-28 103 10m-108 16q61-9 120 15m-98 17q35-6 70 4" fill="none" stroke="#d4d3f3" stroke-opacity=".16" stroke-width="10"/><path d="M231 168q15 37 95 24t93-53" fill="none" stroke="#cbd0ee" stroke-width="9" stroke-opacity=".6"/><circle cx="168" cy="163" r="28" fill="url(#planet-small)"/><circle cx="475" cy="85" r="21" fill="url(#planet-blue)"/><circle cx="418" cy="237" r="5" fill="#c9d6a2"/><path d="m93 260 6-7 6 7-6 7Z" fill="none" stroke="#7a84a7"/><g font-family="Arial,sans-serif" font-size="9" letter-spacing="2" fill="#99a1be"><text x="135" y="215">КАДИЯ</text><text x="303" y="256">КРОНУС</text><text x="453" y="40">ФЕНРИС</text></g><path d="M444 78h-35" stroke="#73849e" stroke-dasharray="3 4"/><circle cx="94" cy="123" r="3" fill="#b4d9b7"/><path d="m84 45 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" fill="#b3bedb" fill-opacity=".6"/></svg>`;}
