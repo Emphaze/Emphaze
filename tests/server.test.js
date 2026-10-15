@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { localDatabase,createLocalServer } from '../server/local.js';
 import { handleApi, digest } from '../server/api.js';
+import { addStory } from '../src/model.js';
 async function fixture(t,{password=true}={}){
  const dir=mkdtempSync(join(tmpdir(),'orbita-auth-')),db=localDatabase(join(dir,'test.sqlite'));
  const secret=randomBytes(24).toString('base64url'),env=password?{ADMIN_PASSWORD:secret}:{};
@@ -43,6 +44,20 @@ test('stale or simultaneous admin writes cannot overwrite the latest revision',a
 test('bad imported states and negative currency are rejected by the server',async t=>{
  const {call,login}=await fixture(t),auth=await login(),saved=await(await call('/api/state')).json();const bad=structuredClone(saved);bad.state.alliances[0].caps=-10;
  assert.equal((await call('/api/state',{method:'PUT',body:bad,...auth})).status,400);assert.deepEqual(await(await call('/api/state')).json(),saved);
+});
+test('only the owner can publish global story news that persist for public readers',async t=>{
+ const {call,login,db}=await fixture(t),auth=await login(),before=await(await call('/api/state')).json();
+ const update=structuredClone(before);addStory(update.state,{title:'Сигнал дальнего сектора',detail:'Немезида уничтожила ещё 50 цивилизаций.\nЭкипаж ожидает новых данных.'});
+ assert.equal((await call('/api/state',{method:'PUT',body:update})).status,401);
+ assert.deepEqual(await(await call('/api/state')).json(),before);
+ assert.equal((await call('/api/state',{method:'PUT',body:update,...auth})).status,200);
+ const published=await(await call('/api/state')).json();assert.equal(published.revision,before.revision+1);assert.deepEqual(published.state,update.state);
+ assert.equal(published.state.events[0].allianceId,'');assert.equal(published.state.events[0].kind,'story');
+ assert.deepEqual(published.state.alliances,before.state.alliances);
+ assert.deepEqual(JSON.parse((await db.prepare('SELECT document FROM camp_state WHERE id=1').first()).document),published.state);
+ const invalid=structuredClone(published);invalid.state.events[0].kind='reward';
+ assert.equal((await call('/api/state',{method:'PUT',body:invalid,...auth})).status,400);
+ assert.deepEqual(await(await call('/api/state')).json(),published);
 });
 test('logout invalidates the server-side session immediately',async t=>{
  const {call,login}=await fixture(t),auth=await login(),saved=await(await call('/api/state')).json();assert.equal((await call('/api/logout',{method:'POST',body:{},...auth})).status,200);

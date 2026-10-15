@@ -167,6 +167,57 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     assert selected_row.count() == 0
     page.reload(); page.wait_for_selector('.access-banner.admin'); go('history')
     assert page.locator(f'.event-row[data-event-id="{selected_event["id"]}"]').count() == 0
+    # Lore news is an owner-authored entry, not a resource reward or HTML markup.
+    story_title = 'Сигнал <b>«Генезиса»</b> & новый маршрут'
+    story_detail = 'Связь восстановлена.\n<img src=x onerror="window.__storyInjected = true">\nИскатели продолжают путь — <script>window.__storyInjected = true</script>.'
+    def publish_story(title, detail, alliance_id=''):
+        before = snapshot()
+        page.locator('[data-action=addStory]').click()
+        assert page.get_by_role('heading', name='Новость хроники', exact=True).is_visible()
+        form = page.locator('dialog form[data-form=addStory]')
+        assert form.locator('[name=allianceId]').input_value() == ''
+        assert form.locator('[name=allianceId] option').count() == len(before['alliances']) + 1
+        assert form.locator('[name=title]').get_attribute('maxlength') == '100'
+        assert form.locator('[name=detail]').get_attribute('maxlength') == '2000'
+        assert form.locator('[name=title]').evaluate('(el) => el.required')
+        assert form.locator('[name=detail]').evaluate('(el) => el.required')
+        # Native validation must leave an empty publication unsaved.
+        submit(success=False)
+        assert form.is_visible()
+        assert snapshot() == before
+        form.locator('[name=title]').fill(title)
+        form.locator('[name=detail]').fill(detail)
+        form.locator('[name=allianceId]').select_option(alliance_id)
+        form.get_by_role('button', name='Опубликовать новость', exact=True).click()
+        form.wait_for(state='detached')
+        after = snapshot()
+        assert {k:v for k,v in after.items() if k != 'events'} == {k:v for k,v in before.items() if k != 'events'}
+        old_ids = {event['id'] for event in before['events']}
+        added = [event for event in after['events'] if event['id'] not in old_ids]
+        assert len(after['events']) == len(before['events']) + 1
+        assert len(added) == 1
+        story = added[0]
+        assert {k:story[k] for k in ['kind','title','detail','allianceId']} == {'kind':'story','title':title,'detail':detail,'allianceId':alliance_id}
+        assert [event for event in after['events'] if event['id'] != story['id']] == before['events']
+        return story['id']
+    global_story_id = publish_story(story_title, story_detail)
+    alliance_story_title = 'Наблюдение альянса'
+    alliance_story_detail = 'Астрофизики заметили новый сигнал.'
+    alliance_story_id = publish_story(alliance_story_title, alliance_story_detail, 'alliance-2')
+    story_alliance_name = snapshot()['alliances'][1]['name']
+    after_stories = snapshot()
+    page.reload(); page.wait_for_selector('.access-banner.admin'); go('history')
+    assert snapshot() == after_stories
+    def assert_story_text(browser_page, event_id, title, detail, author):
+        row = browser_page.locator(f'.event-row[data-event-id="{event_id}"]')
+        assert row.locator('strong').inner_text() == title
+        assert row.locator('p').inner_text() == detail
+        assert row.locator('strong > *, p > *').count() == 0
+        assert row.locator('p').evaluate('(el) => getComputedStyle(el).whiteSpace') == 'pre-wrap'
+        assert author + ' · Сол ' in row.locator('small').inner_text()
+        assert browser_page.evaluate('window.__storyInjected !== true')
+    assert_story_text(page, global_story_id, story_title, story_detail, 'Корабль «Генезис»')
+    assert_story_text(page, alliance_story_id, alliance_story_title, alliance_story_detail, story_alliance_name)
     # New captures pay from the following landing, once per landing.
     go('planets')
     page.locator('[data-action=addPlanet]').click()
@@ -359,12 +410,22 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         mobile.get_by_role('button',name='Открыть меню').click()
         mobile.locator(f'nav [data-page="{target}"]').click()
         if target == 'alliances': assert mobile.locator('[data-action=editMetric],.metric-form').count() == 0
-        if target == 'history': assert mobile.locator('[data-action=removeEvent]').count() == 0
+        if target == 'history': assert mobile.locator('[data-action=addStory],[data-action=removeEvent]').count() == 0
         assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth'),target
+    # Both global and alliance news survive backup/restore and are readable by viewers.
+    for width in [320,390]:
+        mobile.set_viewport_size({'width':width,'height':844})
+        assert_story_text(mobile, global_story_id, story_title, story_detail, 'Корабль «Генезис»')
+        assert_story_text(mobile, alliance_story_id, alliance_story_title, alliance_story_detail, story_alliance_name)
+        assert mobile.locator('[data-action=addStory],[data-action=removeEvent]').count() == 0
+        assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        paragraph = mobile.locator(f'.event-row[data-event-id="{global_story_id}"] p')
+        assert paragraph.evaluate('(el) => parseFloat(getComputedStyle(el).fontSize) >= 12')
+        assert paragraph.evaluate('(el) => {const r=el.getBoundingClientRect();return r.width > 0 && r.left >= 0 && r.right <= innerWidth;}')
     page.get_by_role('button',name='Выйти',exact=True).click()
     page.get_by_role('button',name='Вход прайма',exact=True).wait_for()
     assert page.locator('.page-heading [data-action=adjust]').count()==0
     assert page.request.get(URL+'/api/session').json()['role']=='viewer'
     assert not errors,errors
-    print('PASS: currency/XP/roles, editable reward presets, all planets, recurring landing bonuses, interface defaults, purchases, consuming craft, tool levels, backups, owner/viewer permissions and all mobile pages. No JavaScript errors.')
+    print('PASS: currency/XP/roles, editable reward presets, owner lore news with safe multiline text, all planets, recurring landing bonuses, interface defaults, purchases, consuming craft, tool levels, backups, owner/viewer permissions and all mobile pages. No JavaScript errors.')
     browser.close()

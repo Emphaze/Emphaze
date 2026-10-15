@@ -1,10 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,setAllianceLevel,resetAllProgress,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,removeEvent,updateSettings} from '../src/model.js';
+import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,setAllianceLevel,resetAllProgress,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,addStory,removeEvent,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
+test('global and alliance story news record the current sol and never award or change progress',()=>{
+ const {state}=setup();state.shift.day=5;const before=structuredClone(state),started=Date.now();
+ const globalId=addStory(state,{title:'  Получен сигнал  ',detail:'  Экипаж приступил к исследованию.\nОжидаем данные.  '});
+ const targetId=addStory(state,{title:'Отчёт альянса',detail:'Открыта новая область.',allianceId:id});
+ const [target,global]=state.events;assert.notEqual(globalId,targetId);assert.equal(global.id,globalId);assert.equal(target.id,targetId);
+ assert.deepEqual([global.title,global.detail,global.kind,global.allianceId,global.sol],['Получен сигнал','Экипаж приступил к исследованию.\nОжидаем данные.','story','',5]);
+ assert.equal(target.kind,'story');assert.equal(target.allianceId,id);assert.equal(target.sol,5);assert.ok(Date.parse(global.time)>=started&&Date.parse(global.time)<=Date.now());
+ const withoutNews=structuredClone(state);withoutNews.events.splice(0,2);assert.deepEqual(withoutNews,before);assert.ok(validateState(JSON.parse(JSON.stringify(state))));
+});
+test('story news accept exact title and text limits but reject malformed content atomically',()=>{
+ const {state}=setup();addStory(state,{title:'Т'.repeat(100),detail:'С'.repeat(2000)});assert.ok(validateState(state));
+ for(const values of [{title:''},{title:' '},{title:'Т'.repeat(101)},{title:42},{title:null},{detail:'С'.repeat(2001)},{detail:null},{detail:false},{allianceId:'missing-alliance'},{allianceId:null},{allianceId:42}])unchangedOnError(state,()=>addStory(state,{title:'Новость',detail:'Текст',...values}));
+});
+test('only story events may be global, including an empty journey and headline-only news',()=>{
+ const state=initialState(true),storyId=addStory(state,{title:'Начало путешествия'});assert.equal(state.events[0].detail,'');assert.ok(validateState(state));
+ for(const change of [event=>event.kind='reward',event=>event.allianceId=null,event=>event.allianceId='missing-alliance',event=>event.title=' ',event=>event.title='Т'.repeat(101),event=>event.detail='С'.repeat(2001)]){
+  const copy=JSON.parse(JSON.stringify(state));change(copy.events[0]);assert.equal(validateState(copy),false);
+ }
+ removeEvent(state,storyId);assert.deepEqual(state.events,[]);assert.ok(validateState(state));
+});
 test('deleting one event uses its ID even with matching titles and never reverses recorded progress',()=>{
  const {state}=setup();recordEventResults(state,{name:'Одинаковое событие',results:[{allianceId:id,place:1,caps:100,xp:50}]});
  recordEventResults(state,{name:'Одинаковое событие',results:[{allianceId:id,place:2,caps:50,xp:25}]});

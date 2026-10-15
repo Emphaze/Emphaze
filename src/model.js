@@ -72,6 +72,13 @@ export function initialState(empty=false) {
 }
 export function getAlliance(state,id) {const a=state.alliances.find(a=>a.id===id);if(!a)throw Error('Альянс не найден.');return a;}
 export function log(state,allianceId,title,detail='',kind='update') {state.events.unshift({id:uid(),allianceId,title,detail,kind,time:new Date().toISOString(),sol:state.shift.day});}
+export function addStory(state,{title,detail='',allianceId=''}) {
+ const headline=text(title,'Заголовок новости',100);
+ if(typeof detail!=='string'||detail.trim().length>2000)throw Error('Текст новости: укажите текст до 2000 символов.');
+ if(typeof allianceId!=='string')throw Error('Выберите альянс или общую новость корабля.');
+ if(allianceId!=='')getAlliance(state,allianceId);
+ log(state,allianceId,headline,detail.trim(),'story');return state.events[0].id;
+}
 export function removeEvent(state,eventId) {
  if(!validId(eventId))throw Error('Некорректный идентификатор события.');
  const index=state.events.findIndex(event=>event.id===eventId);if(index<0)throw Error('Событие не найдено.');
@@ -249,7 +256,7 @@ export function validateState(d) {
    }else if(!str(r.note,300))return false;}
   }
  }
- if(d.events.some(e=>!validId(e.id)||!d.alliances.some(a=>a.id===e.allianceId)||!str(e.title)||!str(e.detail)||!str(e.kind,30)||!isInt(e.sol,365)||!Number.isFinite(Date.parse(e.time))))return false;
+ if(d.events.some(e=>!validId(e.id)||!(d.alliances.some(a=>a.id===e.allianceId)||(e.kind==='story'&&e.allianceId===''))||!str(e.title)||!str(e.detail)||!str(e.kind,30)||!isInt(e.sol,365)||!Number.isFinite(Date.parse(e.time))||(e.kind==='story'&&(!str(e.title,100)||!e.title.trim()))))return false;
  return true;
  }catch{return false;}
 }
