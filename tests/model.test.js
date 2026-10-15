@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,adjustResource,recordEventResults,updateInterface,addPlanetRecord,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
+import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
 test('the full supplied catalog and demo state satisfy storage validation',()=>{
  assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));assert.equal(initialState().shift.duration,11);assert.equal(initialState(true).shift.duration,11);
+ assert.equal(initialState(true).shift.name,'Генезис');const fresh=createAlliance('Новый альянс');assert.equal(fresh.interface.charge,200);assert.equal(fresh.interface.gravitons,1);assert.ok(fresh.interface.maxCharge>=fresh.interface.charge);
 });
 test('caps balance and total earned are independent from experience',()=>{
  const {state,a}=setup(),xp=a.xp,balance=a.caps,earned=a.earnedCaps;
@@ -35,10 +36,56 @@ test('event results award all selected alliances and are atomic when any row is 
  const {state,a}=setup(),before=a.caps;recordEventResults(state,{name:'Космическая эстафета',results:[{allianceId:id,place:1,caps:300,xp:150},{allianceId:'alliance-2',place:2,caps:200,xp:100}]});assert.equal(a.caps,before+300);assert.equal(state.alliances[1].caps,2120);assert.match(state.events[0].detail,/2-е место/);
  unchangedOnError(state,()=>recordEventResults(state,{name:'Тест',results:[{allianceId:id,place:1,caps:100,xp:20},{allianceId:'alliance-2',place:2,caps:-1,xp:20}]}));
 });
-test('outpost rewards include caps, XP, planetary action points and tools once',()=>{
- const {state,a}=setup();const recordId=addPlanetRecord(state,id,'cadia',{name:'Новый аванпост',caps:150,xp:60,actionPoints:2,toolId:'tool-6',quantity:2});const before=structuredClone(a);
+test('legacy outpost rewards include caps, XP, planetary action points and tools once until tracking begins',()=>{
+ const {state,a}=setup(),record=a.planets.cadia.outposts[0],recordId=record.id;record.bonus={caps:150,xp:60,actionPoints:2,toolId:'tool-6',quantity:2};const before=structuredClone(a);
  claimOutpostBonus(state,id,recordId);assert.equal(a.caps,before.caps+150);assert.equal(a.xp,before.xp+60);assert.equal(a.planets.cadia.actionPoints,before.planets.cadia.actionPoints+2);assert.equal(a.inventory['tool-6'],3);
  unchangedOnError(state,()=>claimOutpostBonus(state,id,recordId),/уже начислен/);
+});
+test('explicit Cadia landings reset to eight AP plus installed thrust without granting outpost rewards',()=>{
+ const {state,a}=setup(),before=structuredClone(a);a.planets.cadia.actionPoints=99;
+ assert.deepEqual(startCadiaLanding(state,id),{cycle:1,actionPoints:8});
+ assert.deepEqual([a.caps,a.xp,a.inventory,a.functions.raiders],[before.caps,before.xp,before.inventory,before.functions.raiders]);
+ assert.equal(a.planets.cadia.outposts[0].claimed,false);assert.equal(a.planets.cadia.bonusCycle,1);assert.equal(state.events[0].title,'Высадка на Кадию');
+ a.upgrades.push('upgrade-1');assert.deepEqual(startCadiaLanding(state,id),{cycle:2,actionPoints:10});assert.equal(a.planets.cadia.actionPoints,10);
+ assert.equal(state.alliances[1].planets.cadia.bonusCycle,undefined);assert.equal(state.alliances[1].planets.cadia.actionPoints,4);assert.ok(validateState(state));
+});
+test('an old claimed outpost earns once per subsequent explicit landing and survives backup round trips',()=>{
+ const {state,a}=setup(),record=a.planets.cadia.outposts[0];record.claimed=true;
+ assert.equal(outpostBonusStatus(state,id,record.id).canClaim,false);
+ startCadiaLanding(state,id);assert.equal(outpostBonusStatus(state,id,record.id).canClaim,true);const balance=a.caps;
+ claimOutpostBonus(state,id,record.id);assert.equal(a.caps,balance+100);assert.equal(record.lastBonusCycle,1);assert.equal(record.claimed,true);
+ assert.equal(outpostBonusStatus(state,id,record.id).canClaim,false);unchangedOnError(state,()=>claimOutpostBonus(state,id,record.id),/уже начислен/);
+ const restored=JSON.parse(JSON.stringify(state));assert.ok(validateState(restored));assert.equal(outpostBonusStatus(restored,id,record.id).canClaim,false);
+ startCadiaLanding(restored,id);assert.equal(outpostBonusStatus(restored,id,record.id).canClaim,true);claimOutpostBonus(restored,id,record.id);
+ assert.equal(restored.alliances[0].caps,balance+200);assert.equal(restored.alliances[0].planets.cadia.outposts[0].lastBonusCycle,2);assert.ok(validateState(restored));
+});
+test('new captures wait for the next landing both before tracking and during an active landing',()=>{
+ const {state,a}=setup(),values={caps:100,xp:0,actionPoints:0,toolId:null,quantity:0};
+ const pending=addPlanetRecord(state,id,'cadia',{...values,name:'До первой высадки'});
+ assert.equal(a.planets.cadia.outposts.find(record=>record.id===pending).capturedCycle,0);assert.equal(outpostBonusStatus(state,id,pending).label,'Со следующей высадки');
+ unchangedOnError(state,()=>claimOutpostBonus(state,id,pending),/следующей высадке/);assert.ok(validateState(state));
+ startCadiaLanding(state,id);assert.equal(outpostBonusStatus(state,id,pending).canClaim,true);claimOutpostBonus(state,id,pending);
+ const current=addPlanetRecord(state,id,'cadia',{...values,name:'На текущей высадке'});
+ assert.equal(a.planets.cadia.outposts.find(record=>record.id===current).capturedCycle,1);assert.equal(outpostBonusStatus(state,id,current).canClaim,false);
+ unchangedOnError(state,()=>claimOutpostBonus(state,id,current),/следующей высадке/);
+ startCadiaLanding(state,id);assert.equal(outpostBonusStatus(state,id,current).canClaim,true);claimOutpostBonus(state,id,current);assert.ok(validateState(state));
+});
+test('unknown bonuses and failed reward or cycle overflow cannot mark rewards or advance a landing',()=>{
+ const {state,a}=setup(),record=a.planets.cadia.outposts[0];record.bonusKnown=false;
+ startCadiaLanding(state,id);assert.equal(outpostBonusStatus(state,id,record.id).label,'Бонус не указан');unchangedOnError(state,()=>claimOutpostBonus(state,id,record.id),/не указан/);
+ record.bonusKnown=true;a.caps=MAX_NUMBER;unchangedOnError(state,()=>claimOutpostBonus(state,id,record.id));assert.equal(record.lastBonusCycle,undefined);assert.equal(record.claimed,false);
+ a.caps=0;claimOutpostBonus(state,id,record.id);assert.equal(record.lastBonusCycle,1);
+ a.planets.cadia.bonusCycle=MAX_NUMBER;unchangedOnError(state,()=>startCadiaLanding(state,id));
+});
+test('landing metadata rejects negative, fractional, future and inconsistent backup counters',()=>{
+ const {state,a}=setup();startCadiaLanding(state,id);const record=a.planets.cadia.outposts[0];claimOutpostBonus(state,id,record.id);assert.ok(validateState(state));
+ const mutations=[
+  s=>s.alliances[0].planets.cadia.bonusCycle=-1,s=>s.alliances[0].planets.cadia.bonusCycle=0.5,s=>s.alliances[0].planets.cadia.bonusCycle=MAX_NUMBER+1,
+  s=>s.alliances[0].planets.cadia.outposts[0].capturedCycle=2,s=>s.alliances[0].planets.cadia.outposts[0].capturedCycle=-1,
+  s=>s.alliances[0].planets.cadia.outposts[0].lastBonusCycle=2,s=>s.alliances[0].planets.cadia.outposts[0].lastBonusCycle=0.5,
+  s=>s.alliances[0].planets.cadia.outposts[0].capturedCycle=1,s=>delete s.alliances[0].planets.cadia.bonusCycle,
+ ];
+ for(const mutate of mutations){const copy=structuredClone(state);mutate(copy);assert.equal(validateState(copy),false);}
 });
 test('planet records remain independent for each planet and alliance',()=>{
  const {state,a}=setup(),before=a.planets.fenris.territories.length;addPlanetRecord(state,id,'fenris',{name:'Сектор 99',note:'Найден лёд'});addPlanetRecord(state,id,'cronus',{name:'«Комета»',note:'На орбите'});assert.equal(a.planets.fenris.territories.length,before+1);assert.equal(a.planets.cronus.shuttles.length,2);assert.equal(state.alliances[1].planets.cronus.shuttles.length,1);
@@ -105,7 +152,7 @@ test('level thresholds can change, invalid thresholds cannot mutate settings, an
  unchangedOnError(state,()=>updateSettings(state,{name:'Тест',day:7,duration:11,levelThresholds:'0, 500, 400'}),/строго возрастать/);
 });
 test('backups reject invalid currencies, unknown ingredients, duplicate IDs and charge overflow',()=>{
- const {state}=setup();const cases=[s=>s.alliances[0].caps=-1,s=>s.alliances[0].interface.charge=101,s=>s.alliances[1].id=s.alliances[0].id,s=>s.alliances[0].inventory['missing']=2,s=>s.itemOverrides['upgrade-1']={recipe:{type:'specific',variants:[['missing']]}}];
+ const {state}=setup();const cases=[s=>s.alliances[0].caps=-1,s=>s.alliances[0].interface.charge=s.alliances[0].interface.maxCharge+1,s=>s.alliances[1].id=s.alliances[0].id,s=>s.alliances[0].inventory['missing']=2,s=>s.itemOverrides['upgrade-1']={recipe:{type:'specific',variants:[['missing']]}}];
  for(const mutate of cases){const copy=structuredClone(state);mutate(copy);assert.equal(validateState(copy),false);}assert.equal(validateState({version:1}),false);
 });
 test('import uncertainty flags and source notes validate without allowing invented outpost rewards',()=>{

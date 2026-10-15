@@ -49,11 +49,11 @@ export async function handleApi(request,env,{ip='unknown',now=Date.now()}={}){
    return json({role:'admin',csrfToken:csrf,expiresAt:now+SESSION_MS},200,{'Set-Cookie':cookie(token,secure)});
   }
   const s=configured?await session(request,db,now,env.ADMIN_PASSWORD):null;
-  if(!s)return error('Редактирование доступно только администратору. Войдите снова.',401);
+  if(!s)return error('Редактирование доступно только прайму. Войдите снова.',401);
   if(!equal(request.headers.get('X-CSRF-Token'),s.csrf_token))return error('Проверка сессии не пройдена. Обновите страницу.',403);
   if(path==='/api/logout'&&request.method==='POST'){await db.prepare('DELETE FROM admin_sessions WHERE token_hash = ?').bind(s.token_hash).run();return json({role:'viewer'},200,{'Set-Cookie':cookie('',secure,true)});}
   if(path==='/api/state'&&request.method==='PUT'){
-   const body=await readBody(request);if(!Number.isSafeInteger(body.revision)||body.revision<0||!validateState(body.state))return error('Некорректное сохранение смены.',400);
+   const body=await readBody(request);if(!Number.isSafeInteger(body.revision)||body.revision<0||!validateState(body.state))return error('Некорректное сохранение путешествия.',400);
    // One conditional statement prevents stale admin tabs from overwriting changes.
    const result=await db.prepare('UPDATE camp_state SET document = ?, revision = revision + 1, updated_at = ? WHERE id = 1 AND revision = ?').bind(JSON.stringify(body.state),now,body.revision).run();
    if(!result.meta?.changes)return error('Данные уже изменились в другой вкладке. Обновите страницу и повторите действие.',409);

@@ -1,10 +1,20 @@
-// Prices, effects and recipe wording supplied by the camp organiser.
+// Public rules, prices and recipes from the Genesis tables and mechanics guide.
 export const roles = [
-  { id: 'engineers', name: 'Инженеры', icon: 'wrench', color: 'orange' },
-  { id: 'astrophysicists', name: 'Астрофизики', icon: 'orbit', color: 'blue' },
-  { id: 'astrobiologists', name: 'Астробиологи', icon: 'leaf', color: 'green' },
-  { id: 'archivists', name: 'Архивариусы', icon: 'book', color: 'purple' },
-  { id: 'raiders', name: 'Райдеры', icon: 'rocket', color: 'pink' },
+  { id: 'engineers', name: 'Инженеры', icon: 'wrench', color: 'orange', description: 'Создают и развивают технические проекты.' },
+  { id: 'astrophysicists', name: 'Астрофизики', icon: 'orbit', color: 'blue', description: 'Управляют кораблём и составляют маршрутную карту.' },
+  { id: 'astrobiologists', name: 'Астробиологи', icon: 'leaf', color: 'green', description: 'Изучают биологию и ботанику.' },
+  { id: 'archivists', name: 'Архивариусы', icon: 'book', color: 'purple', description: 'Записывают историю и собирают знания о планетах.' },
+  { id: 'raiders', name: 'Райдеры', icon: 'rocket', color: 'pink', description: 'Привилегия одной из четырёх подфункций за наибольшую накопленную репутацию. Райдеры участвуют в высадках.' },
+];
+export const eventRewards = [
+  { place: 1, caps: 1800, xp: 70 },
+  { place: 2, caps: 1450, xp: 55 },
+  { place: 3, caps: 1200, xp: 45 },
+  { place: 4, caps: 1000, xp: 35 },
+  { place: 5, caps: 850, xp: 30 },
+  { place: 6, caps: 750, xp: 25 },
+  { place: 7, caps: 650, xp: 20 },
+  { place: 8, caps: 550, xp: 15 },
 ];
 export const planets = [
   { id: 'cadia', name: 'Кадия', label: 'Аванпосты и контроль', icon: 'flag', color: 'orange', description: 'Захватывайте аванпосты и отслеживайте их бонусы.' },
@@ -12,7 +22,7 @@ export const planets = [
   { id: 'cronus', name: 'Кронус', label: 'Шаттлы альянса', icon: 'rocket', color: 'purple', description: 'Управляйте флотом и учитывайте шаттлы во владении.' },
 ];
 const upgradeRows = [
- ['Десантный форсаж',300,'2 ОД на высадку','Любые 2 инструмента',0],
+ ['Десантный форсаж',300,'+2 ОД на высадку','Любые 2 инструмента',0],
  ['Орбитальный сканер',400,'Раскрыть 2 объекта перед высадкой','Любые 2 инструмента',0],
  ['Полевой картограф',500,'Первое закрепление территории бесплатно','Любые 2 инструмента',0],
  ['Грузовая платформа',500,'При одном луте получить +1 вариант награды','Любые 2 инструмента',0],
@@ -38,7 +48,7 @@ const upgradeRows = [
  ['Грузовой модуль I',1000,'Из выбранной кучи можно забрать +1 часть мусора','Азимут + Мицелий\nКонтур + Импульс',[['tool-3','tool-8'],['tool-1','tool-6']]],
  ['Грузовой модуль II',1500,'Можно забрать ещё +1 часть из второй выбранной кучи','Мицелий + Симбионт\nИмпульс + Спектр',[['tool-8','tool-13'],['tool-6','tool-11']]],
  ['Грузовой модуль III',2000,'Из каждой выбранной кучи можно забирать на 1 часть больше','Симбионт + Эдем\nСпектр + Фордж',[['tool-13','tool-18'],['tool-11','tool-16']]],
- ['Гравитон',200,'1 гравитон (максимум 10)','',null],
+ ['Гравитон',200,'1 гравитон','',null],
 ];
 const equipmentRows = [
  ['Реверсивный бластер','Оттолкнуть другой альянс на 20 метров','-',null],
@@ -50,7 +60,7 @@ const equipmentRows = [
  ['Детектор эмоций','Списать 10 стойкости другому альянсу','-',null],
  ['Протоногенератор','Повышение репутации на 10 единиц','-',null],
  ['Варп','Подсказка от Прайма','-',null],
- ['Вакуумник','Подзарядка техно-рюкзака на 1 час меньше','-',null],
+ ['Вакуумник','Подзарядка модульного интерфейса на 1 час меньше','-',null],
  ['Фотоникс','За проигрыш не снимается стойкость + шанс разделить альянс и отправить его в разные точки','Реверсивный бластер\nЗащитный барьер',['equip-1','equip-2']],
  ['Антимагнит','Восполняет 40 ед. стойкости','Усовершенствованный рентген; Защитный барьер',['equip-3','equip-2']],
  ['Экзопортал','Дополнительные 30 ед. опыта','Пульсарик\nСингулятор',['equip-4','equip-5']],
@@ -60,11 +70,11 @@ const equipmentRows = [
  ['Энергетическая волна','Восполняет 20 стойкости + шанс отправить в любые 2 точки в пределах 20 метров','Фотоникс; Антимагнит',['equip-11','equip-12']],
  ['Фотониум','Перенаправить эффект на другой альянс, восполняет 50 стойкости','Пульсарик; Антимагнит; Экзопортал',['equip-4','equip-12','equip-13']],
  ['Космомодуль','Дополнительные 50 ед. опыта + 50 ед. репутации','Экзопортал\nТерамагнити',['equip-13','equip-15']],
- ['Спасательный зонд','Сохранение предметов техно-устройства альянса в случае проигрыша на исследованиях','Вакуумник\nТерамагнити',['equip-10','equip-15']],
+ ['Спасательный зонд','Сохранение предметов модульного интерфейса альянса в случае проигрыша на исследованиях','Вакуумник\nТерамагнити',['equip-10','equip-15']],
  ['Гиперсвязь','Помощь от Прайма на 20 минут','Варп; Терамагнити',['equip-9','equip-15']],
  ['Квантлуп','Дополнительный опыт 50 ед. + просмотр предметов у двух других альянсов','Пульсарик\nСингулятор; Экзопортал',['equip-4','equip-5','equip-13']],
  ['Спектролинз','Взлом другого альянса на 10 минут, помощь Прайма','Реверсивный бластер; Варп; Фотоникс',['equip-1','equip-9','equip-11']],
- ['Нановолна','Мгновенная зарядка рюкзака + 50 к заряду навсегда','Астрореактор; Антимагнит; Астро анализатор',['equip-6','equip-12','equip-14']],
+ ['Нановолна','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда','Астрореактор; Антимагнит; Астро анализатор',['equip-6','equip-12','equip-14']],
  ['Плазмограф','Получать ×2 опыта','Протоногенератор\nФотониум; Квантлуп',['equip-8','equip-18','equip-22']],
  ['Кванторезонатор','Повышение репутации на 20 единиц','-',null],
  ['Капсула','Нельзя понизить репутацию альянса за этот сол','-',null],
@@ -73,7 +83,7 @@ const equipmentRows = [
  ['Космобуфер','30 дополнительной стойкости','-',null],
  ['Энергозонд','Терять половину стойкости','Защитный барьер\nКосмобуфер',['equip-2','equip-30']],
  ['Щит','Неуязвимость к эффектам от одного альянса во время испытания','Пульсарик\nГиперсвязь',['equip-4','equip-21']],
- ['Энергокапсула','Сохраняет себя и ещё 1 шмотку в случае проигрыша на событии','Космобуфер; Модуль',['equip-30','equip-39']],
+ ['Энергокапсула','Сохраняет себя и ещё 1 предмет в случае проигрыша на событии','Космобуфер; Модуль',['equip-30','equip-39']],
  ['Энергетический бластер','Удвоить потерю опыта у альянса','Реверсивный бластер: Сингулятор; Магнит',['equip-1','equip-5','equip-28']],
  ['Статический импульс','Выбранный альянс передвигается пешком 7 минут','Реверсивный бластер: Сингулятор; Магнит',['equip-1','equip-5','equip-28']],
  ['Нейтронный генератор','×2 крышечек за испытание','Защитный барьер; Энергетический бластер Астрореактор',['equip-2','equip-34','equip-6']],
@@ -81,8 +91,8 @@ const equipmentRows = [
  ['Ионная нить','Привязать к себе другой альянс на 4 минуты','-',null],
  ['Модуль','Захватить одну точку другого альянса на высадке','-',null],
  ['Энерго-крюк','Притягивает другой альянс','-',null],
- ['Астралик','Дарует способность украсть одну шмотку у другого альянса','-',null],
- ['Космопортал','Мгновенная зарядка рюкзака + 50 к заряду навсегда','Защитный барьер: Детектор эмоций; Вакуумник',['equip-2','equip-7','equip-10']],
+ ['Астралик','Дарует способность украсть один предмет у другого альянса','-',null],
+ ['Космопортал','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда','Защитный барьер: Детектор эмоций; Вакуумник',['equip-2','equip-7','equip-10']],
 ];
 const toolRows = [
  ['Мультитул «Контур»',1,'-',null,'engineers'],
@@ -129,18 +139,34 @@ export const catalog = [
  { id:'access-9', category:'access', name:'Дублирующие кольцо', price:500, effect:'Выбрать локацию и тему для квазара.', recipeText:'-', recipe:null },
  { id:'access-10', category:'access', name:'Коммуникатор со звездами', price:700, effect:'Прогулка (до 7 искателей) с праймом или спецом.', recipeText:'-', recipe:null },
  { id:'access-11', category:'access', name:'Пульт управления', price:800, effect:'Выбрать себе спеца или прайма на испытание.', recipeText:'-', recipe:null },
- ...upgradeRows.map(([name,price,effect,recipeText,ingredients],i)=>({id:`upgrade-${i+1}`,category:'upgrades',name,price,effect,recipeText,recipe:typeof ingredients==='number'?{type:'anyTools',count:2,minLevel:ingredients}:recipe(ingredients),repeatable:name==='Гравитон',kind:name==='Гравитон'?'graviton':'upgrade',needsRecipeReview:Array.isArray(ingredients?.[0])&&i!==16})),
+ ...upgradeRows.map(([name,price,effect,recipeText,ingredients],i)=>({id:`upgrade-${i+1}`,category:'upgrades',name,price,effect,recipeText,recipe:typeof ingredients==='number'?{type:'anyTools',count:2,minLevel:ingredients}:recipe(ingredients),repeatable:name==='Гравитон',kind:name==='Гравитон'?'graviton':'upgrade',needsRecipeReview:false})),
  ...equipmentRows.map(([name,effect,recipeText,ingredients],i)=>({id:`equip-${i+1}`,category:'equipment',name,price:null,effect,recipeText,recipe:recipe(ingredients),needsRecipeReview:!!ingredients})),
  ...toolRows.map(([name,toolLevel,recipeText,ingredients,role],i)=>({id:`tool-${i+1}`,category:'tools',name,price:null,effect:`Уровень инструмента: ${toolLevel}`,toolLevel,role,recipeText,recipe:recipe(ingredients),needsRecipeReview:i===29,recipeIssue:i===19||i===24?'В рецепте указан «Форпост», но такого инструмента нет в списке. Выберите нужный ингредиент в настройках товара.':null})),
 ];
 export const categories = {
- access:{name:'Доступ',subtitle:'Возможности, которые делают сол особенным',icon:'key'},
+ access:{name:'Устройства',subtitle:'Устройства, открывающие особые возможности',icon:'key'},
  upgrades:{name:'Прокачка',subtitle:'Улучшения для экспедиций, исследований и лута',icon:'trending'},
  equipment:{name:'Эквип',subtitle:'Предметы, способности и технологии вашего альянса',icon:'box'},
  tools:{name:'Инструменты',subtitle:'От «Контура» до экспедиционного ядра «Генезис»',icon:'wrench'},
 };
+const legacyItemEffects = new Map([
+ ['upgrade-1',['2 ОД на высадку','+2 ОД на высадку']],
+ ['upgrade-27',['1 гравитон (максимум 10)','1 гравитон']],
+ ['equip-10',['Подзарядка техно-рюкзака на 1 час меньше','Подзарядка модульного интерфейса на 1 час меньше']],
+ ['equip-20',['Сохранение предметов техно-устройства альянса в случае проигрыша на исследованиях','Сохранение предметов модульного интерфейса альянса в случае проигрыша на исследованиях']],
+ ['equip-24',['Мгновенная зарядка рюкзака + 50 к заряду навсегда','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда']],
+ ['equip-33',['Сохраняет себя и ещё 1 шмотку в случае проигрыша на событии','Сохраняет себя и ещё 1 предмет в случае проигрыша на событии']],
+ ['equip-41',['Дарует способность украсть одну шмотку у другого альянса','Дарует способность украсть один предмет у другого альянса']],
+ ['equip-42',['Мгновенная зарядка рюкзака + 50 к заряду навсегда','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда']],
+]);
+const legacyEffectKey = value => value.normalize('NFC').toLocaleLowerCase('ru').replace(/ё/gu,'е').replace(/\s+/gu,'').replace(/[.!]$/u,'');
+export function normalizeGenesisItem(item) {
+ const result={...item},legacy=legacyItemEffects.get(item.id);
+ if(legacy&&typeof item.effect==='string'&&legacyEffectKey(item.effect)===legacyEffectKey(legacy[0]))result.effect=legacy[1];
+ return result;
+}
 export function getItem(state,id) {
  const item = catalog.find(c=>c.id===id) || state.customItems.find(c=>c.id===id);
- return item ? {...item,...state.itemOverrides[id],id:item.id,category:item.category} : null;
+ return item ? normalizeGenesisItem({...item,...state.itemOverrides[id],id:item.id,category:item.category}) : null;
 }
 export function allItems(state) { return [...catalog,...state.customItems].map(c=>getItem(state,c.id)); }

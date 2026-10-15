@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10131f">
-  <meta name="description" content="Космический корабль Генезис — прогресс альянсов, ресурсы и исследования лагерной смены.">
+  <meta name="description" content="Космический корабль Генезис — атрибуты альянсов, ресурсы и исследования.">
   <title>Космический корабль Генезис</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2210%22%20fill%3D%22%23171e2b%22%2F%3E%3Cg%20transform%3D%22translate%288%208%29%22%20fill%3D%22none%22%20stroke%3D%22%23b8c9e9%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%204c3-2%207-1%207-1s1%204-1%207l-6%207-7-7ZM7%2010%203%2011v6l4-1m7%201-1%204h6l1-4M7%2018l-3%203m1-5-3%203m6%201-3%203%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
   <!-- Bundled Golos Text font license:
@@ -731,6 +731,11 @@ dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding:
   .tool-level-group { margin-bottom: 28px; }
 }
 
+.landing-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.landing-toolbar p { color: var(--muted); font-size: 13px; margin: 0; }
+@media (max-width: 600px) { .landing-toolbar { align-items: flex-start; flex-direction: column; } }
+.recipe-or { color: var(--muted); display: block; font-size: 12px; }
+
   </style>
 </head>
 <body>
@@ -773,13 +778,23 @@ function starMap(){return `<svg class="starmap" viewBox="0 0 590 310" aria-hidde
 
 
 // --- catalog.js ---
-// Prices, effects and recipe wording supplied by the camp organiser.
+// Public rules, prices and recipes from the Genesis tables and mechanics guide.
 const roles = [
-  { id: 'engineers', name: 'Инженеры', icon: 'wrench', color: 'orange' },
-  { id: 'astrophysicists', name: 'Астрофизики', icon: 'orbit', color: 'blue' },
-  { id: 'astrobiologists', name: 'Астробиологи', icon: 'leaf', color: 'green' },
-  { id: 'archivists', name: 'Архивариусы', icon: 'book', color: 'purple' },
-  { id: 'raiders', name: 'Райдеры', icon: 'rocket', color: 'pink' },
+  { id: 'engineers', name: 'Инженеры', icon: 'wrench', color: 'orange', description: 'Создают и развивают технические проекты.' },
+  { id: 'astrophysicists', name: 'Астрофизики', icon: 'orbit', color: 'blue', description: 'Управляют кораблём и составляют маршрутную карту.' },
+  { id: 'astrobiologists', name: 'Астробиологи', icon: 'leaf', color: 'green', description: 'Изучают биологию и ботанику.' },
+  { id: 'archivists', name: 'Архивариусы', icon: 'book', color: 'purple', description: 'Записывают историю и собирают знания о планетах.' },
+  { id: 'raiders', name: 'Райдеры', icon: 'rocket', color: 'pink', description: 'Привилегия одной из четырёх подфункций за наибольшую накопленную репутацию. Райдеры участвуют в высадках.' },
+];
+const eventRewards = [
+  { place: 1, caps: 1800, xp: 70 },
+  { place: 2, caps: 1450, xp: 55 },
+  { place: 3, caps: 1200, xp: 45 },
+  { place: 4, caps: 1000, xp: 35 },
+  { place: 5, caps: 850, xp: 30 },
+  { place: 6, caps: 750, xp: 25 },
+  { place: 7, caps: 650, xp: 20 },
+  { place: 8, caps: 550, xp: 15 },
 ];
 const planets = [
   { id: 'cadia', name: 'Кадия', label: 'Аванпосты и контроль', icon: 'flag', color: 'orange', description: 'Захватывайте аванпосты и отслеживайте их бонусы.' },
@@ -787,7 +802,7 @@ const planets = [
   { id: 'cronus', name: 'Кронус', label: 'Шаттлы альянса', icon: 'rocket', color: 'purple', description: 'Управляйте флотом и учитывайте шаттлы во владении.' },
 ];
 const upgradeRows = [
- ['Десантный форсаж',300,'2 ОД на высадку','Любые 2 инструмента',0],
+ ['Десантный форсаж',300,'+2 ОД на высадку','Любые 2 инструмента',0],
  ['Орбитальный сканер',400,'Раскрыть 2 объекта перед высадкой','Любые 2 инструмента',0],
  ['Полевой картограф',500,'Первое закрепление территории бесплатно','Любые 2 инструмента',0],
  ['Грузовая платформа',500,'При одном луте получить +1 вариант награды','Любые 2 инструмента',0],
@@ -813,7 +828,7 @@ const upgradeRows = [
  ['Грузовой модуль I',1000,'Из выбранной кучи можно забрать +1 часть мусора','Азимут + Мицелий\nКонтур + Импульс',[['tool-3','tool-8'],['tool-1','tool-6']]],
  ['Грузовой модуль II',1500,'Можно забрать ещё +1 часть из второй выбранной кучи','Мицелий + Симбионт\nИмпульс + Спектр',[['tool-8','tool-13'],['tool-6','tool-11']]],
  ['Грузовой модуль III',2000,'Из каждой выбранной кучи можно забирать на 1 часть больше','Симбионт + Эдем\nСпектр + Фордж',[['tool-13','tool-18'],['tool-11','tool-16']]],
- ['Гравитон',200,'1 гравитон (максимум 10)','',null],
+ ['Гравитон',200,'1 гравитон','',null],
 ];
 const equipmentRows = [
  ['Реверсивный бластер','Оттолкнуть другой альянс на 20 метров','-',null],
@@ -825,7 +840,7 @@ const equipmentRows = [
  ['Детектор эмоций','Списать 10 стойкости другому альянсу','-',null],
  ['Протоногенератор','Повышение репутации на 10 единиц','-',null],
  ['Варп','Подсказка от Прайма','-',null],
- ['Вакуумник','Подзарядка техно-рюкзака на 1 час меньше','-',null],
+ ['Вакуумник','Подзарядка модульного интерфейса на 1 час меньше','-',null],
  ['Фотоникс','За проигрыш не снимается стойкость + шанс разделить альянс и отправить его в разные точки','Реверсивный бластер\nЗащитный барьер',['equip-1','equip-2']],
  ['Антимагнит','Восполняет 40 ед. стойкости','Усовершенствованный рентген; Защитный барьер',['equip-3','equip-2']],
  ['Экзопортал','Дополнительные 30 ед. опыта','Пульсарик\nСингулятор',['equip-4','equip-5']],
@@ -835,11 +850,11 @@ const equipmentRows = [
  ['Энергетическая волна','Восполняет 20 стойкости + шанс отправить в любые 2 точки в пределах 20 метров','Фотоникс; Антимагнит',['equip-11','equip-12']],
  ['Фотониум','Перенаправить эффект на другой альянс, восполняет 50 стойкости','Пульсарик; Антимагнит; Экзопортал',['equip-4','equip-12','equip-13']],
  ['Космомодуль','Дополнительные 50 ед. опыта + 50 ед. репутации','Экзопортал\nТерамагнити',['equip-13','equip-15']],
- ['Спасательный зонд','Сохранение предметов техно-устройства альянса в случае проигрыша на исследованиях','Вакуумник\nТерамагнити',['equip-10','equip-15']],
+ ['Спасательный зонд','Сохранение предметов модульного интерфейса альянса в случае проигрыша на исследованиях','Вакуумник\nТерамагнити',['equip-10','equip-15']],
  ['Гиперсвязь','Помощь от Прайма на 20 минут','Варп; Терамагнити',['equip-9','equip-15']],
  ['Квантлуп','Дополнительный опыт 50 ед. + просмотр предметов у двух других альянсов','Пульсарик\nСингулятор; Экзопортал',['equip-4','equip-5','equip-13']],
  ['Спектролинз','Взлом другого альянса на 10 минут, помощь Прайма','Реверсивный бластер; Варп; Фотоникс',['equip-1','equip-9','equip-11']],
- ['Нановолна','Мгновенная зарядка рюкзака + 50 к заряду навсегда','Астрореактор; Антимагнит; Астро анализатор',['equip-6','equip-12','equip-14']],
+ ['Нановолна','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда','Астрореактор; Антимагнит; Астро анализатор',['equip-6','equip-12','equip-14']],
  ['Плазмограф','Получать ×2 опыта','Протоногенератор\nФотониум; Квантлуп',['equip-8','equip-18','equip-22']],
  ['Кванторезонатор','Повышение репутации на 20 единиц','-',null],
  ['Капсула','Нельзя понизить репутацию альянса за этот сол','-',null],
@@ -848,7 +863,7 @@ const equipmentRows = [
  ['Космобуфер','30 дополнительной стойкости','-',null],
  ['Энергозонд','Терять половину стойкости','Защитный барьер\nКосмобуфер',['equip-2','equip-30']],
  ['Щит','Неуязвимость к эффектам от одного альянса во время испытания','Пульсарик\nГиперсвязь',['equip-4','equip-21']],
- ['Энергокапсула','Сохраняет себя и ещё 1 шмотку в случае проигрыша на событии','Космобуфер; Модуль',['equip-30','equip-39']],
+ ['Энергокапсула','Сохраняет себя и ещё 1 предмет в случае проигрыша на событии','Космобуфер; Модуль',['equip-30','equip-39']],
  ['Энергетический бластер','Удвоить потерю опыта у альянса','Реверсивный бластер: Сингулятор; Магнит',['equip-1','equip-5','equip-28']],
  ['Статический импульс','Выбранный альянс передвигается пешком 7 минут','Реверсивный бластер: Сингулятор; Магнит',['equip-1','equip-5','equip-28']],
  ['Нейтронный генератор','×2 крышечек за испытание','Защитный барьер; Энергетический бластер Астрореактор',['equip-2','equip-34','equip-6']],
@@ -856,8 +871,8 @@ const equipmentRows = [
  ['Ионная нить','Привязать к себе другой альянс на 4 минуты','-',null],
  ['Модуль','Захватить одну точку другого альянса на высадке','-',null],
  ['Энерго-крюк','Притягивает другой альянс','-',null],
- ['Астралик','Дарует способность украсть одну шмотку у другого альянса','-',null],
- ['Космопортал','Мгновенная зарядка рюкзака + 50 к заряду навсегда','Защитный барьер: Детектор эмоций; Вакуумник',['equip-2','equip-7','equip-10']],
+ ['Астралик','Дарует способность украсть один предмет у другого альянса','-',null],
+ ['Космопортал','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда','Защитный барьер: Детектор эмоций; Вакуумник',['equip-2','equip-7','equip-10']],
 ];
 const toolRows = [
  ['Мультитул «Контур»',1,'-',null,'engineers'],
@@ -904,19 +919,35 @@ const catalog = [
  { id:'access-9', category:'access', name:'Дублирующие кольцо', price:500, effect:'Выбрать локацию и тему для квазара.', recipeText:'-', recipe:null },
  { id:'access-10', category:'access', name:'Коммуникатор со звездами', price:700, effect:'Прогулка (до 7 искателей) с праймом или спецом.', recipeText:'-', recipe:null },
  { id:'access-11', category:'access', name:'Пульт управления', price:800, effect:'Выбрать себе спеца или прайма на испытание.', recipeText:'-', recipe:null },
- ...upgradeRows.map(([name,price,effect,recipeText,ingredients],i)=>({id:`upgrade-${i+1}`,category:'upgrades',name,price,effect,recipeText,recipe:typeof ingredients==='number'?{type:'anyTools',count:2,minLevel:ingredients}:recipe(ingredients),repeatable:name==='Гравитон',kind:name==='Гравитон'?'graviton':'upgrade',needsRecipeReview:Array.isArray(ingredients?.[0])&&i!==16})),
+ ...upgradeRows.map(([name,price,effect,recipeText,ingredients],i)=>({id:`upgrade-${i+1}`,category:'upgrades',name,price,effect,recipeText,recipe:typeof ingredients==='number'?{type:'anyTools',count:2,minLevel:ingredients}:recipe(ingredients),repeatable:name==='Гравитон',kind:name==='Гравитон'?'graviton':'upgrade',needsRecipeReview:false})),
  ...equipmentRows.map(([name,effect,recipeText,ingredients],i)=>({id:`equip-${i+1}`,category:'equipment',name,price:null,effect,recipeText,recipe:recipe(ingredients),needsRecipeReview:!!ingredients})),
  ...toolRows.map(([name,toolLevel,recipeText,ingredients,role],i)=>({id:`tool-${i+1}`,category:'tools',name,price:null,effect:`Уровень инструмента: ${toolLevel}`,toolLevel,role,recipeText,recipe:recipe(ingredients),needsRecipeReview:i===29,recipeIssue:i===19||i===24?'В рецепте указан «Форпост», но такого инструмента нет в списке. Выберите нужный ингредиент в настройках товара.':null})),
 ];
 const categories = {
- access:{name:'Доступ',subtitle:'Возможности, которые делают сол особенным',icon:'key'},
+ access:{name:'Устройства',subtitle:'Устройства, открывающие особые возможности',icon:'key'},
  upgrades:{name:'Прокачка',subtitle:'Улучшения для экспедиций, исследований и лута',icon:'trending'},
  equipment:{name:'Эквип',subtitle:'Предметы, способности и технологии вашего альянса',icon:'box'},
  tools:{name:'Инструменты',subtitle:'От «Контура» до экспедиционного ядра «Генезис»',icon:'wrench'},
 };
+const legacyItemEffects = new Map([
+ ['upgrade-1',['2 ОД на высадку','+2 ОД на высадку']],
+ ['upgrade-27',['1 гравитон (максимум 10)','1 гравитон']],
+ ['equip-10',['Подзарядка техно-рюкзака на 1 час меньше','Подзарядка модульного интерфейса на 1 час меньше']],
+ ['equip-20',['Сохранение предметов техно-устройства альянса в случае проигрыша на исследованиях','Сохранение предметов модульного интерфейса альянса в случае проигрыша на исследованиях']],
+ ['equip-24',['Мгновенная зарядка рюкзака + 50 к заряду навсегда','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда']],
+ ['equip-33',['Сохраняет себя и ещё 1 шмотку в случае проигрыша на событии','Сохраняет себя и ещё 1 предмет в случае проигрыша на событии']],
+ ['equip-41',['Дарует способность украсть одну шмотку у другого альянса','Дарует способность украсть один предмет у другого альянса']],
+ ['equip-42',['Мгновенная зарядка рюкзака + 50 к заряду навсегда','Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда']],
+]);
+const legacyEffectKey = value => value.normalize('NFC').toLocaleLowerCase('ru').replace(/ё/gu,'е').replace(/\s+/gu,'').replace(/[.!]$/u,'');
+function normalizeGenesisItem(item) {
+ const result={...item},legacy=legacyItemEffects.get(item.id);
+ if(legacy&&typeof item.effect==='string'&&legacyEffectKey(item.effect)===legacyEffectKey(legacy[0]))result.effect=legacy[1];
+ return result;
+}
 function getItem(state,id) {
  const item = catalog.find(c=>c.id===id) || state.customItems.find(c=>c.id===id);
- return item ? {...item,...state.itemOverrides[id],id:item.id,category:item.category} : null;
+ return item ? normalizeGenesisItem({...item,...state.itemOverrides[id],id:item.id,category:item.category}) : null;
 }
 function allItems(state) { return [...catalog,...state.customItems].map(c=>getItem(state,c.id)); }
 
@@ -950,10 +981,10 @@ function updateBonusLevels(state,id,values) {
  a.bonusLevels=bonusLevels;log(state,id,reason,`Дополнительные уровни: ${before} → ${bonusLevels}`,'level');
 }
 function createAlliance(name,motto='К новым мирам — вместе',color='blue') {
- return { id:uid(),name:text(name,'Название',60),motto:text(motto,'Девиз',140),color,caps:0,earnedCaps:0,xp:0,functions:Object.fromEntries(roles.map(r=>[r.id,0])), interface:{name:`Интерфейс «${name.trim()}»`,charge:0,maxCharge:100,gravitons:0,resilience:0}, inventory:{},upgrades:[],access:[],children:[],planets:{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}} };
+ return { id:uid(),name:text(name,'Название',60),motto:text(motto,'Девиз',140),color,caps:0,earnedCaps:0,xp:0,functions:Object.fromEntries(roles.map(r=>[r.id,0])), interface:{name:`Интерфейс «${name.trim()}»`,charge:200,maxCharge:200,gravitons:1,resilience:0}, inventory:{},upgrades:[],access:[],children:[],planets:{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}} };
 }
 function initialState(empty=false) {
- const state={version:2,shift:{name:'Космическая одиссея',day:7,duration:11},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
+ const state={version:2,shift:{name:'Генезис',day:7,duration:11},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
  if(empty)return state;
  const rows=[['Орион','Первым открывать неизведанное','blue',2480,1840,[34,28,19,22,6]],['Андромеда','Знание — наша сверхсила','purple',1920,1620,[21,38,30,25,5]],['Сириус','Дальше звёзд. Ближе друг к другу','orange',1650,1450,[31,20,27,18,8]],['Пегас','Вселенная начинается с команды','green',1380,1280,[24,22,35,20,4]]];
  rows.forEach(([name,motto,color,caps,xp,values],i)=>{
@@ -976,11 +1007,11 @@ function checkSum(value,delta,label) {return integer(value+delta,label);}
 function adjustResource(state,{allianceId,resource,amount,reason,childId}) {
  const a=getAlliance(state,allianceId);const delta=integer(amount,'Изменение',-MAX_NUMBER,MAX_NUMBER);if(!delta)throw Error('Изменение не может быть нулевым.');const why=text(reason,'Причина',160);
  const group=roles.find(r=>r.id===resource);if(!group&&!['caps','xp','charge','resilience','cadiaAP'].includes(resource))throw Error('Неизвестный показатель.');
- const child=childId?a.children.find(c=>c.id===childId):null;if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт начисляется участнику выбранного альянса.');
+ const child=childId?a.children.find(c=>c.id===childId):null;if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт начисляется искателю выбранного альянса.');
  let current=group?a.functions[resource]:resource==='charge'||resource==='resilience'?a.interface[resource]:resource==='cadiaAP'?a.planets.cadia.actionPoints:a[resource];
  const next=checkSum(current,delta,'Итоговый показатель');
  const earned=resource==='caps'&&delta>0?checkSum(a.earnedCaps,delta,'Заработанные крышечки'):a.earnedCaps;
- const childXP=child?checkSum(child.xp,delta,'Опыт участника'):null;
+ const childXP=child?checkSum(child.xp,delta,'Опыт искателя'):null;
  if(group)a.functions[resource]=next;else if(resource==='charge'||resource==='resilience')a.interface[resource]=next;else if(resource==='cadiaAP')a.planets.cadia.actionPoints=next;else a[resource]=next;
  if(resource==='charge'){if(next>a.interface.maxCharge)a.interface.maxChargeKnown=false;a.interface.maxCharge=Math.max(1,a.interface.maxCharge,next);}
  if(child)child.xp=childXP;a.earnedCaps=earned;
@@ -988,7 +1019,7 @@ function adjustResource(state,{allianceId,resource,amount,reason,childId}) {
  log(state,allianceId,why,`${child?`${child.name} · `:''}${labels[resource]}: ${delta>0?'+':''}${delta}`,'reward');
 }
 function recordEventResults(state,{name,results}) {
- const title=text(name,'Мероприятие',100);if(!Array.isArray(results)||!results.length)throw Error('Добавьте результаты.');
+ const title=text(name,'Событие',100);if(!Array.isArray(results)||!results.length)throw Error('Добавьте результаты.');
  const seen=new Set();const checked=results.map(r=>{const a=getAlliance(state,r.allianceId);if(seen.has(a.id))throw Error('Альянс указан дважды.');seen.add(a.id);const caps=integer(r.caps,'Крышечки'),xp=integer(r.xp,'Опыт'),place=integer(r.place,'Место',1,999);return {a,caps,xp,place,newCaps:checkSum(a.caps,caps,'Баланс'),newEarned:checkSum(a.earnedCaps,caps,'Заработано'),newXP:checkSum(a.xp,xp,'Опыт')};});
  checked.forEach(({a,caps,xp,place,newCaps,newEarned,newXP})=>{a.caps=newCaps;a.earnedCaps=newEarned;a.xp=newXP;log(state,a.id,title,`${place}-е место · +${caps} крышечек · +${xp} опыта`,'event');});
 }
@@ -1012,13 +1043,35 @@ function addPlanetRecord(state,id,planet,values) {
  let record={id:uid(),name};if(planet==='cadia'){
   const toolId=values.toolId||null;const tool=toolId?getItem(state,toolId):null;if(toolId&&(!tool||tool.category!=='tools'))throw Error('Выберите инструмент из каталога.');
   record.bonus={caps:integer(values.caps,'Бонус крышечек'),xp:integer(values.xp,'Бонус опыта'),actionPoints:integer(values.actionPoints,'Бонус ОД'),toolId,quantity:toolId?integer(values.quantity,'Количество инструментов',1,999):0};record.claimed=false;
+  record.capturedCycle=integer(a.planets.cadia.bonusCycle??0,'Номер высадки');
  }else record.note=typeof values.note==='string'?values.note.trim().slice(0,300):'';
  list.push(record);log(state,id,planet==='cadia'?'Захвачен аванпост':planet==='fenris'?'Исследована территория':'Новый шаттл во флоте',name,'planet');return record.id;
 }
+function startCadiaLanding(state,id) {
+ const a=getAlliance(state,id),cadia=a.planets.cadia;
+ const previous=cadia.bonusCycle===undefined?0:integer(cadia.bonusCycle,'Номер высадки');
+ const cycle=checkSum(previous,1,'Номер высадки'),actionPoints=8+(a.upgrades.includes('upgrade-1')?2:0);
+ cadia.bonusCycle=cycle;cadia.actionPoints=actionPoints;
+ log(state,id,'Высадка на Кадию',`Высадка ${cycle} · ${actionPoints} ОД${a.upgrades.includes('upgrade-1')?' · Десантный форсаж +2 ОД':''}`,'planet');
+ return {cycle,actionPoints};
+}
+function outpostBonusStatus(state,id,recordId) {
+ const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');
+ if(r.bonusKnown===false)return {canClaim:false,label:'Бонус не указан',reason:'Бонус аванпоста не указан в источнике. Сначала уточните его у прайма.'};
+ const cadia=a.planets.cadia;
+ if(cadia.bonusCycle===undefined){
+  if(r.capturedCycle!==undefined)return {canClaim:false,label:'Со следующей высадки',reason:'Бонус станет доступен на следующей высадке на Кадию.'};
+  return r.claimed?{canClaim:false,label:'Бонус получен',reason:'Бонус уже начислен.'}:{canClaim:true,label:'Получить бонус',reason:''};
+ }
+ const cycle=integer(cadia.bonusCycle,'Номер высадки'),capturedCycle=integer(r.capturedCycle??0,'Высадка захвата'),lastBonusCycle=r.lastBonusCycle===undefined?undefined:integer(r.lastBonusCycle,'Высадка бонуса');
+ if(cycle<=capturedCycle)return {canClaim:false,label:'Со следующей высадки',reason:'Бонус станет доступен на следующей высадке на Кадию.'};
+ if(lastBonusCycle===cycle)return {canClaim:false,label:'Бонус этой высадки получен',reason:'Бонус уже начислен для текущей высадки.'};
+ return {canClaim:true,label:'Получить бонус',reason:''};
+}
 function claimOutpostBonus(state,id,recordId) {
- const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');if(r.bonusKnown===false)throw Error('Бонус аванпоста не указан в источнике. Сначала уточните его у организатора.');if(r.claimed)throw Error('Бонус уже начислен.');const b=r.bonus;
+ const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');const status=outpostBonusStatus(state,id,recordId);if(!status.canClaim)throw Error(status.reason);const b=r.bonus;
  const caps=checkSum(a.caps,b.caps,'Баланс'),earned=checkSum(a.earnedCaps,b.caps,'Заработано'),xp=checkSum(a.xp,b.xp,'Опыт'),ap=checkSum(a.planets.cadia.actionPoints,b.actionPoints,'ОД'),qty=b.toolId?checkSum(a.inventory[b.toolId]||0,b.quantity,'Инструменты'):0;
- a.caps=caps;a.earnedCaps=earned;a.xp=xp;a.planets.cadia.actionPoints=ap;if(b.toolId)a.inventory[b.toolId]=qty;r.claimed=true;
+ a.caps=caps;a.earnedCaps=earned;a.xp=xp;a.planets.cadia.actionPoints=ap;if(b.toolId)a.inventory[b.toolId]=qty;r.claimed=true;if(a.planets.cadia.bonusCycle!==undefined)r.lastBonusCycle=a.planets.cadia.bonusCycle;
  log(state,id,`Бонус аванпоста «${r.name}»`,`+${b.caps} крышечек · +${b.xp} опыта · +${b.actionPoints} ОД${b.toolId?` · ${getItem(state,b.toolId).name} ×${b.quantity}`:''}`,'reward');
 }
 function removePlanetRecord(state,id,planet,recordId) {
@@ -1037,7 +1090,7 @@ function validateAcquisition(state,a,item) {if(item.kind==='graviton')checkSum(a
 function acquire(a,item) {if(item.kind==='graviton')a.interface.gravitons++;else if(item.category==='upgrades')a.upgrades.push(item.id);else if(item.category==='access')a.access.push(item.id);else a.inventory[item.id]=(a.inventory[item.id]||0)+1;}
 function purchase(state,allianceId,itemId) {
  const a=getAlliance(state,allianceId),item=getItem(state,itemId);if(!item)throw Error('Товар не найден.');validateAcquisition(state,a,item);if(item.price===null||item.price===undefined)throw Error('Сначала укажите цену товара.');const price=integer(item.price,'Цена');if(a.caps<price)throw Error('Недостаточно крышечек.');if(item.category==='tools'||item.category==='equipment')checkSum(a.inventory[item.id]||0,1,'Количество предметов');
- if(item.kind==='graviton'&&(a.interface.gravitonsPurchased??0)>=10)throw Error('Максимум — 10 покупок гравитонов за смену.');
+ if(item.kind==='graviton'&&(a.interface.gravitonsPurchased??0)>=10)throw Error('Максимум — 10 покупок гравитонов за путешествие.');
  a.caps-=price;acquire(a,item);if(item.kind==='graviton')a.interface.gravitonsPurchased=(a.interface.gravitonsPurchased??0)+1;log(state,allianceId,`Покупка: ${item.name}`,`−${price} крышечек`,'purchase');
 }
 function craft(state,allianceId,itemId,ingredients) {
@@ -1057,7 +1110,7 @@ function craft(state,allianceId,itemId,ingredients) {
 }
 function removeInventory(state,id,itemId,quantity,reason) {const a=getAlliance(state,id),item=getItem(state,itemId),n=integer(quantity,'Количество',1,999),why=text(reason,'Причина',160);if(!item||!['tools','equipment'].includes(item.category)||owned(state,a,item)<n)throw Error('Недостаточно предметов.');a.inventory[itemId]-=n;if(!a.inventory[itemId])delete a.inventory[itemId];log(state,id,`Списано: ${item.name}`,`${n} шт. · ${why}`,'inventory');}
 function updateSettings(state,values) {
- const name=text(values.name,'Название смены',80),duration=integer(values.duration,'Длительность',1,365),day=integer(values.day,'Сол',1,duration);
+ const name=text(values.name,'Название путешествия',80),duration=integer(values.duration,'Длительность',1,365),day=integer(values.day,'Сол',1,duration);
  const thresholds=String(values.levelThresholds).split(/[,;\s]+/).filter(Boolean).map(n=>integer(n,'Порог опыта'));if(!thresholds.length||thresholds[0]!==0||thresholds.length>100||thresholds.some((n,i)=>i>0&&n<=thresholds[i-1]))throw Error('Пороги должны начинаться с 0 и строго возрастать.');
  if(day!==state.shift.day)state.alliances.forEach(a=>a.access=[]);
  state.shift={name,day,duration};state.rules={levelThresholds:thresholds,consumeIngredients:true,craftCostsCaps:values.craftCostsCaps===true||values.craftCostsCaps==='on'};
@@ -1083,10 +1136,13 @@ function validateState(d) {
   if(a.sourceNotes!==undefined&&(!a.sourceNotes||typeof a.sourceNotes!=='object'||Array.isArray(a.sourceNotes)||Object.entries(a.sourceNotes).some(([key,value])=>!['level','cadia','fenris','cronus','missing'].includes(key)||!str(value))))return false;
   if(!a.inventory||typeof a.inventory!=='object'||Array.isArray(a.inventory)||Object.entries(a.inventory).some(([id,n])=>!ids.has(id)||!['equipment','tools'].includes(getItem(d,id).category)||!isInt(n)||!n)||!Array.isArray(a.upgrades)||!Array.isArray(a.access)||a.upgrades.some(id=>getItem(d,id)?.category!=='upgrades')||a.access.some(id=>getItem(d,id)?.category!=='access'))return false;
   if(!Array.isArray(a.children)||!unique(a.children)||a.children.some(c=>!validId(c.id)||!str(c.name,60)||!roles.some(r=>r.id===c.role)||!isInt(c.xp)))return false;
-  const p=a.planets;if(!p||!isInt(p.cadia?.actionPoints))return false;
+  const p=a.planets;if(!p||!isInt(p.cadia?.actionPoints)||(p.cadia.bonusCycle!==undefined&&!isInt(p.cadia.bonusCycle)))return false;
   for(const [planet,key] of [['cadia','outposts'],['fenris','territories'],['cronus','shuttles']]){
    const rows=p[planet]?.[key];if(!Array.isArray(rows)||!unique(rows))return false;
-   for(const r of rows){if(!validId(r.id)||!str(r.name,80))return false;if(planet==='cadia'){const b=r.bonus;if(!b||!isInt(b.caps)||!isInt(b.xp)||!isInt(b.actionPoints)||!isInt(b.quantity,999)||typeof r.claimed!=='boolean'||!optionalBoolean(r.bonusKnown)||!(b.toolId===null||getItem(d,b.toolId)?.category==='tools')||(b.toolId&&!b.quantity))return false;}else if(!str(r.note,300))return false;}
+   for(const r of rows){if(!validId(r.id)||!str(r.name,80))return false;if(planet==='cadia'){const b=r.bonus;if(!b||!isInt(b.caps)||!isInt(b.xp)||!isInt(b.actionPoints)||!isInt(b.quantity,999)||typeof r.claimed!=='boolean'||!optionalBoolean(r.bonusKnown)||!(b.toolId===null||getItem(d,b.toolId)?.category==='tools')||(b.toolId&&!b.quantity))return false;
+    if((r.capturedCycle!==undefined&&!isInt(r.capturedCycle))||(r.lastBonusCycle!==undefined&&!isInt(r.lastBonusCycle)))return false;
+    if(p.cadia.bonusCycle===undefined){if((r.capturedCycle!==undefined&&r.capturedCycle!==0)||r.lastBonusCycle!==undefined)return false;}else if((r.capturedCycle??0)>p.cadia.bonusCycle||(r.lastBonusCycle!==undefined&&(r.lastBonusCycle>p.cadia.bonusCycle||r.lastBonusCycle<=(r.capturedCycle??0))))return false;
+   }else if(!str(r.note,300))return false;}
   }
  }
  if(d.events.some(e=>!validId(e.id)||!d.alliances.some(a=>a.id===e.allianceId)||!str(e.title)||!str(e.detail)||!str(e.kind,30)||!isInt(e.sol,365)||!Number.isFinite(Date.parse(e.time))))return false;
@@ -1107,7 +1163,7 @@ let auth={role:'viewer',configured:false},serverReady=false,revision=0,busy=fals
 const readActions=new Set(['noop','close','menu','login','logout','selectAlliance','activate','openPlanet','planetTab','equipmentTab','catalogFilter','item','inventory','gotoEquipment','export','downloadSnapshot']);
 const isAdmin=()=>serverReady&&auth.role==='admin';
 let page='overview',activeId=state.alliances[0]?.id||'',planet='cadia',equipmentTab='equipment',search='',catalogFilter='all';
-const nav=[['overview','grid','Обзор'],['alliances','people','Альянсы'],['planets','orbit','Планеты'],['interface','bolt','Интерфейс'],['access','key','Доступ'],['upgrades','trending','Прокачка'],['equipment','box','Эквип'],['history','clock','Хроника']];
+const nav=[['overview','grid','Атрибуты'],['alliances','people','Альянсы'],['planets','orbit','Планеты'],['interface','bolt','Интерфейс'],['access','key','Устройства'],['upgrades','trending','Прокачка'],['equipment','box','Эквип'],['history','clock','Хроника']];
 const active=()=>state.alliances.find(a=>a.id===activeId);
 const match=t=>String(t).toLowerCase().includes(search.toLowerCase());
 function toast(message,error=false){document.querySelector('.toast')?.remove();const el=document.createElement('div');el.className=`toast ${error?'error':''}`;el.setAttribute('role','status');el.textContent=message;document.body.append(el);setTimeout(()=>el.remove(),4500);}
@@ -1117,7 +1173,7 @@ async function api(path,options={}) {
  if(!response.ok){const err=Error(data.error||'Сервер не смог выполнить запрос.');err.status=response.status;throw err;}return data;
 }
 async function save() {
- if(!isAdmin())throw Error('Изменять данные может только администратор.');
+ if(!isAdmin())throw Error('Изменять данные может только прайм.');
  const result=await api('/api/state',{method:'PUT',body:JSON.stringify({state,revision})});revision=result.revision;
 }
 async function refreshRemote(first=false) {
@@ -1131,9 +1187,9 @@ async function refreshRemote(first=false) {
  }catch{if(first){serverReady=false;auth={role:'viewer',configured:false};render();}else if(isAdmin()){toast('Связь с сервером потеряна. Изменения сохранятся только после восстановления связи.',true);}}
 }
 function loginModal(){
- if(!serverReady){modal('Вход недоступен',intro('Это HTML-копия для просмотра. Вход администратора доступен на сайте, подключённом к серверу.'));return;}
- if(!auth.configured){modal('Вход пока не настроен',intro('Владелец сайта должен задать пароль администратора в защищённых настройках хостинга.'));return;}
- modal('Вход организатора',`${intro('Войдите, чтобы изменять прогресс смены. Остальным пользователям доступен только просмотр.')}<form data-form="login">${field('Пароль администратора',input('password','','type="password" autocomplete="current-password" maxlength="256" required'))}${submit('Войти')}</form>`);
+ if(!serverReady){modal('Вход недоступен',intro('Это HTML-копия для просмотра. Вход прайма доступен на сайте, подключённом к серверу.'));return;}
+ if(!auth.configured){modal('Вход пока не настроен',intro('Владелец сайта должен задать пароль прайма в защищённых настройках хостинга.'));return;}
+ modal('Вход прайма',`${intro('Войдите, чтобы изменять прогресс путешествия. Остальным пользователям доступен только просмотр.')}<form data-form="login">${field('Пароль прайма',input('password','','type="password" autocomplete="current-password" maxlength="256" required'))}${submit('Войти')}</form>`);
 }
 function applyAccessControls(){
  const d=app.querySelector('#modal');
@@ -1147,28 +1203,28 @@ const allianceOptions=(id=activeId)=>state.alliances.map(a=>`<option value="${a.
 function render(){
  if(!state.alliances.some(a=>a.id===activeId))activeId=state.alliances[0]?.id||'';
  document.title=SITE_NAME;
- const titles={overview:'Прогресс альянсов',alliances:'Альянсы',planets:'Планеты',interface:'Интерфейсы',access:'Доступ',upgrades:'Прокачка',equipment:'Эквип',history:'Хроника'};
- const descriptions={overview:'Крышечки, опыт и уровни всех альянсов.',alliances:'Показатели, участники и владения выбранного альянса.',planets:'Аванпосты Кадии, исследования Фенриса и шаттлы Кронуса.',interface:'Заряд и гравитоны каждого альянса.',access:'Особые возможности за крышечки.',upgrades:'Улучшения альянса: цена, эффект и крафт.',equipment:'Предметы, способности и инструменты.',history:'Награды за мероприятия и история изменений.'};
+ const titles={overview:'Атрибуты альянсов',alliances:'Альянсы',planets:'Планеты',interface:'Интерфейсы',access:'Устройства',upgrades:'Прокачка',equipment:'Эквип',history:'Хроника'};
+ const descriptions={overview:'Крышечки, опыт и уровни всех альянсов.',alliances:'Показатели, искатели и владения выбранного альянса.',planets:'Аванпосты Кадии, исследования Фенриса и шаттлы Кронуса.',interface:'Заряд и гравитоны каждого альянса.',access:'Устройства, открывающие особые возможности.',upgrades:'Улучшения альянса: цена, эффект и крафт.',equipment:'Предметы, способности и инструменты.',history:'Награды за события и история изменений.'};
  app.innerHTML=`<aside class="sidebar">
   <a href="#overview" class="brand" aria-label="${SITE_NAME} — обзор"><span class="brand-mark">${icon('rocket')}</span><span class="brand-copy"><span>Космический корабль</span><strong>Генезис</strong></span></a>
-  <button class="shift-switcher" data-action="${isAdmin()?'settings':'noop'}" ${isAdmin()?'':'disabled'}><span class="shift-symbol">${icon('settings')}</span><span><strong>${esc(state.shift.name)}</strong><small>${isAdmin()?'Настройки смены':'Текущая смена'}</small></span>${isAdmin()?icon('down'):''}</button>
+  <button class="shift-switcher" data-action="${isAdmin()?'settings':'noop'}" ${isAdmin()?'':'disabled'}><span class="shift-symbol">${icon('settings')}</span><span><strong>${esc(state.shift.name)}</strong><small>${isAdmin()?'Настройки путешествия':'Путешествие'}</small></span>${isAdmin()?icon('down'):''}</button>
   <nav aria-label="Разделы сайта">${nav.map(([id,i,label])=>`<button class="nav-item ${page===id?'active':''}" data-page="${id}" ${page===id?'aria-current="page"':''}>${icon(i)}<span>${label}</span></button>`).join('')}</nav>
  </aside><div class="main-shell"><header class="topbar">
   <button class="icon-button mobile-menu" aria-label="Открыть меню" data-action="menu">${icon('menu')}</button>
   <div class="breadcrumb"><strong class="desktop-section">${nav.find(n=>n[0]===page)[2]}</strong><span class="mobile-site-name">Космический корабль<b>Генезис</b></span></div>
-  <div class="top-actions"><span class="sol-label">Сол ${state.shift.day} / ${state.shift.duration}</span><span class="top-divider"></span><label class="active-alliance"><span>Альянс</span><select id="active-alliance" aria-label="Активный альянс">${state.alliances.length?allianceOptions():'<option value="">Нет альянсов</option>'}</select></label>${button(isAdmin()?'Выйти':'Вход организатора',isAdmin()?'logout':'login','ghost auth-button')}</div>
+  <div class="top-actions"><span class="sol-label">Сол ${state.shift.day} / ${state.shift.duration}</span><span class="top-divider"></span><label class="active-alliance"><span>Альянс</span><select id="active-alliance" aria-label="Активный альянс">${state.alliances.length?allianceOptions():'<option value="">Нет альянсов</option>'}</select></label>${button(isAdmin()?'Выйти':'Вход прайма',isAdmin()?'logout':'login','ghost auth-button')}</div>
  </header><main>
-  <div class="page-heading"><div><div class="access-banner ${isAdmin()?'admin':'viewer'}">${icon(isAdmin()?'key':'shield')}<span>${serverReady?(isAdmin()?'Организатор':'Только просмотр'):'Копия для просмотра'}</span></div><h1>${titles[page]}</h1><p>${descriptions[page]}</p></div><div class="page-heading-actions">${page==='overview'?button('Результаты мероприятия','eventResults','secondary'):''}${button(`${icon('plus')} Изменить показатели`,'adjust','primary')}</div></div>
+  <div class="page-heading"><div><div class="access-banner ${isAdmin()?'admin':'viewer'}">${icon(isAdmin()?'key':'shield')}<span>${serverReady?(isAdmin()?'Прайм':'Только просмотр'):'Копия для просмотра'}</span></div><h1>${titles[page]}</h1><p>${descriptions[page]}</p></div><div class="page-heading-actions">${page==='overview'?button('Результаты события','eventResults','secondary'):''}${button(`${icon('plus')} Изменить показатели`,'adjust','primary')}</div></div>
   ${storageProblem?'<div class="warning">Хранилище недоступно или сохранённый файл повреждён. Экспортируйте данные перед продолжением.</div>':''}
   ${({overview,alliances:alliancesPage,planets:planetsPage,interface:interfacesPage,access:catalogPage,upgrades:catalogPage,equipment:catalogPage,history:historyPage})[page]()}
  </main></div><dialog id="modal"></dialog>`;
  applyAccessControls();
 }
 function overview(){
- return `<section class="overview-alliances"><div class="section-heading"><h2>Все альянсы <span class="muted-number">${state.alliances.length}</span></h2><button class="text-button" data-page="alliances">Открыть альянс ${icon('arrow')}</button></div><div class="alliance-grid">${state.alliances.map(allianceCard).join('')||empty('Нет альянсов','Добавьте первый альянс смены.',button('Добавить альянс','addAlliance'))}</div></section>`;
+ return `<section class="overview-alliances"><div class="section-heading"><h2>Все альянсы <span class="muted-number">${state.alliances.length}</span></h2><button class="text-button" data-page="alliances">Открыть альянс ${icon('arrow')}</button></div><div class="alliance-grid">${state.alliances.map(allianceCard).join('')||empty('Нет альянсов','Добавьте первый альянс.',button('Добавить альянс','addAlliance'))}</div></section>`;
 }
 function stat(i,value,label,note,color){return `<article class="stat panel"><span class="stat-icon ${color}">${icon(i)}</span><strong class="stat-value">${value}</strong><h3>${label}</h3><p>${note}</p></article>`;}
-function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'получено с начала учёта':'заработано за смену'}`;}
+function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'получено с начала учёта':'заработано за путешествие'}`;}
 function levelDescription(a){const bonus=a.bonusLevels||0;return `${allianceLevel(state,a)-bonus} по опыту${bonus?` + ${bonus} найдено на карте`:''}`;}
 function sourceNotesPanel(a){
  const labels={level:'Уровень в таблице',cadia:'Кадия',fenris:'Фенрис',cronus:'Кронус'};
@@ -1188,14 +1244,26 @@ function allianceCard(a){
 }
 function eventRow(e){const a=state.alliances.find(a=>a.id===e.allianceId);const i={reward:'coin',purchase:'box',craft:'wrench',planet:'orbit',interface:'bolt',event:'trophy',inventory:'box',update:'edit'}[e.kind]||'spark';return `<div class="event-row"><span class="event-icon ${a?.color||'blue'}">${icon(i)}</span><div><strong>${esc(e.title)}</strong><p>${esc(e.detail)}</p><small>${esc(a?.name||'Альянс')} · Сол ${e.sol} · ${new Date(e.time).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div></div>`;}
 function searchBox(placeholder){return `<label class="search">${icon('search')}<input id="search" type="search" placeholder="${placeholder}" aria-label="Поиск" value="${esc(search)}"></label>`;}
-function alliancesPage(){const a=active();return `<div class="toolbar">${searchBox('Найти альянс или участника…')}${button(`${icon('plus')} Новый альянс`,'addAlliance')}</div><div class="alliance-tabs">${state.alliances.filter(a=>match(a.name)||a.children.some(c=>match(c.name))).map(a=>`<button class="alliance-tab ${a.id===activeId?'selected':''}" data-action="activate" data-id="${a.id}"><span class="emblem mini ${a.color}">${emblem(a.color)}</span>${esc(a.name)}<span>УР. ${allianceLevel(state,a)}</span></button>`).join('')||'<p class="panel-note">Ничего не найдено</p>'}</div>${a?allianceDetail(a):empty('Ваши альянсы скоро выйдут на связь','Создайте первую команду.',button('Новый альянс','addAlliance'))}`;}
-function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} участников`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange')}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple')}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue')}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div>${sourceNotesPanel(a)}<div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('plus')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Участник</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Начислить опыт: ${esc(c.name)}">${icon('plus')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список участников пока не заполнен.':'Добавьте участников вашей команды.'}</p>`}<p class="fine-note">Личный опыт также увеличивает общий опыт альянса.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
+function alliancesPage(){const a=active();return `<div class="toolbar">${searchBox('Найти альянс или искателя…')}${button(`${icon('plus')} Новый альянс`,'addAlliance')}</div><div class="alliance-tabs">${state.alliances.filter(a=>match(a.name)||a.children.some(c=>match(c.name))).map(a=>`<button class="alliance-tab ${a.id===activeId?'selected':''}" data-action="activate" data-id="${a.id}"><span class="emblem mini ${a.color}">${emblem(a.color)}</span>${esc(a.name)}<span>УР. ${allianceLevel(state,a)}</span></button>`).join('')||'<p class="panel-note">Ничего не найдено</p>'}</div>${a?allianceDetail(a):empty('Ваши альянсы скоро выйдут на связь','Создайте первую команду.',button('Новый альянс','addAlliance'))}`;}
+function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} искателей`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange')}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple')}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue')}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div>${sourceNotesPanel(a)}<div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}" title="${esc(r.description)}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('plus')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Искатель</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Начислить опыт: ${esc(c.name)}">${icon('plus')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список искателей пока не заполнен.':'Добавьте искателей вашей команды.'}</p>`}<p class="fine-note">Личный опыт также увеличивает общий опыт альянса.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
 function planetTabs(){return `<div class="segment-tabs planet-tabs">${planets.map(p=>`<button class="${planet===p.id?'selected':''}" data-action="planetTab" data-planet="${p.id}">${icon(p.icon)}${p.name}</button>`).join('')}</div>`;}
-function planetsPage(){const a=active(),p=planets.find(p=>p.id===planet);return `${planetTabs()}${a?`<section class="planet-banner panel"><div><span class="eyebrow">${esc(a.name)} · ПЛАНЕТАРНАЯ ОПЕРАЦИЯ</span><h2>${p.name}</h2></div></section><div class="section-heading"><h2>${planet==='cadia'?'Захваченные аванпосты':planet==='fenris'?'Исследованные территории':'Шаттлы во владении'} <span class="muted-number">${planetRecords(a).length}</span></h2>${button(`${icon('plus')} ${planet==='cadia'?'Захватить аванпост':planet==='fenris'?'Отметить исследование':'Добавить шаттл'}`,'addPlanet')}</div>${planet==='cadia'?`<div class="planet-ap">${icon('bolt')} <span>Очки действий на Кадии</span><strong>${a.planets.cadia.actionPoints}</strong><button class="text-button" data-action="adjustAP">Изменить ${icon('edit')}</button></div>`:''}${planetSourceNote(a)}<div class="planet-records">${planetRecords(a).map(r=>planetRecord(a,r)).join('')||empty('Этот мир ждёт ваших открытий','Запишите первую операцию альянса.')}</div>`:empty('Сначала создайте альянс','Прогресс на каждой планете учитывается отдельно для каждого альянса.',button('Добавить альянс','addAlliance'))}`;}
+function planetsPage(){
+ const a=active(),p=planets.find(p=>p.id===planet);
+ if(!a)return `${planetTabs()}${empty('Сначала создайте альянс','Прогресс на каждой планете учитывается отдельно для каждого альянса.',button('Добавить альянс','addAlliance'))}`;
+ const cadia=a.planets.cadia;
+ return `${planetTabs()}<section class="planet-banner panel"><div><span class="eyebrow">${esc(a.name)} · ПЛАНЕТАРНАЯ ОПЕРАЦИЯ</span><h2>${p.name}</h2></div></section>
+  ${planet==='cadia'?`<div class="landing-toolbar"><p>${cadia.bonusCycle?`Высадка ${num(cadia.bonusCycle)} · бонусы аванпостов`:'Бонусы аванпостов — с последующих высадок'}</p>${button('Начать высадку','startLanding')}</div><div class="planet-ap">${icon('bolt')} <span>Очки действий на Кадии</span><strong>${cadia.actionPoints}</strong><button class="text-button" data-action="adjustAP">Изменить ${icon('edit')}</button></div>`:''}
+  <div class="section-heading"><h2>${planet==='cadia'?'Захваченные аванпосты':planet==='fenris'?'Исследованные территории':'Шаттлы во владении'} <span class="muted-number">${planetRecords(a).length}</span></h2>${button(`${icon('plus')} ${planet==='cadia'?'Захватить аванпост':planet==='fenris'?'Отметить исследование':'Добавить шаттл'}`,'addPlanet')}</div>
+  ${planetSourceNote(a)}<div class="planet-records">${planetRecords(a).map(r=>planetRecord(a,r)).join('')||empty('Этот мир ждёт ваших открытий','Запишите первую операцию альянса.')}</div>`;
+}
 function planetRecords(a){return planet==='cadia'?a.planets.cadia.outposts:planet==='fenris'?a.planets.fenris.territories:a.planets.cronus.shuttles;}
 function planetRecord(a,r){
  const p=planets.find(p=>p.id===planet);
- const bonus=planet==='cadia'?(r.bonusKnown===false?'<p class="unknown-value">Бонус не указан.</p>':`<div class="bonus-list"><span>${icon('coin')} +${r.bonus.caps} крышечек</span><span>${icon('spark')} +${r.bonus.xp} опыта</span><span>${icon('bolt')} +${r.bonus.actionPoints} ОД на Кадии</span>${r.bonus.toolId?`<span>${icon('wrench')} ${esc(getItem(state,r.bonus.toolId).name)} ×${r.bonus.quantity}</span>`:''}</div>${button(`${icon(r.claimed?'check':'plus')} ${r.claimed?'Бонус начислен':'Начислить бонус'}`,'claimBonus',r.claimed?'completed':'secondary',`data-id="${r.id}" ${r.claimed?'disabled':''}`)}`):`<p>${esc(r.note)||'Запись в журнале экспедиции'}</p>`;
+ let bonus=`<p>${esc(r.note)||'Запись в журнале экспедиции'}</p>`;
+ if(planet==='cadia'){
+  const status=outpostBonusStatus(state,a.id,r.id),received=!status.canClaim&&/получен/.test(status.label);
+  bonus=r.bonusKnown===false?'<p class="unknown-value">Бонус не указан.</p>':`<div class="bonus-list"><span>${icon('coin')} +${r.bonus.caps} крышечек</span><span>${icon('spark')} +${r.bonus.xp} опыта</span><span>${icon('bolt')} +${r.bonus.actionPoints} ОД на Кадии</span>${r.bonus.toolId?`<span>${icon('wrench')} ${esc(getItem(state,r.bonus.toolId).name)} ×${r.bonus.quantity}</span>`:''}</div>${button(`${icon(status.canClaim?'plus':received?'check':'clock')} ${esc(status.label)}`,'claimBonus',received?'completed':'secondary',`data-id="${r.id}" title="${esc(status.reason)}" ${status.canClaim?'':'disabled'}`)}`;
+ }
  return `<article class="panel planet-record"><div class="section-heading"><span class="record-icon ${p.color}">${icon(p.icon)}</span><span class="tag">${planet==='cadia'?'ЗАХВАЧЕН':planet==='fenris'?'ИССЛЕДОВАНО':'ВО ВЛАДЕНИИ'}</span><button class="icon-button" data-action="removePlanet" data-id="${r.id}" aria-label="Снять с учёта ${esc(r.name)}">${icon('trash')}</button></div><h3>${esc(r.name)}</h3>${bonus}</article>`;
 }
 function interfacesPage(){return `<div class="interface-grid">${state.alliances.map(a=>{
@@ -1214,16 +1282,22 @@ function catalogPage(){
  const contents=!items.length?empty('Ничего не найдено','Измените поиск или фильтр.'):category==='tools'?[...new Set(items.map(i=>i.toolLevel))].sort((x,y)=>x-y).map(level=>`<section class="tool-level-group" data-tool-level="${level}" aria-labelledby="tool-level-${level}"><div class="section-heading tool-level-heading"><h2 id="tool-level-${level}">Уровень ${level}</h2></div><div class="catalog-grid">${items.filter(i=>i.toolLevel===level).map(i=>itemCard(i,a)).join('')}</div></section>`).join(''):`<div class="catalog-grid">${items.map(i=>itemCard(i,a)).join('')}</div>`;
  return `${page==='equipment'?`<div class="segment-tabs"><button data-action="equipmentTab" data-tab="equipment" class="${equipmentTab==='equipment'?'selected':''}">${icon('box')} Предметы и способности <span>${allItems(state).filter(i=>i.category==='equipment').length}</span></button><button data-action="equipmentTab" data-tab="tools" class="${equipmentTab==='tools'?'selected':''}">${icon('wrench')} Инструменты <span>${allItems(state).filter(i=>i.category==='tools').length}</span></button></div>`:''}<div class="catalog-context"><span>${icon('coin')} Баланс ${a?`альянса <strong>${esc(a.name)}</strong>`:'не выбран'}: <b>${a?num(a.caps):'—'}</b> крышечек</span><div>${button(`${icon('box')} Инвентарь`,'inventory')}${button(`${icon('plus')} Новый товар`,'addItem')}</div></div><div class="toolbar">${searchBox('Название, эффект или рецепт…')}<div class="filter-chips">${[['all','Все'],['owned','Во владении'],['affordable','Можно купить']].map(([id,title])=>`<button class="${catalogFilter===id?'selected':''}" data-action="catalogFilter" data-filter="${id}">${title}</button>`).join('')}</div></div>${contents}`;
 }
+function recipeDescription(item){
+ if(item.category==='upgrades'&&item.recipe?.type==='specific'&&item.recipe.variants.length>1){
+  return item.recipe.variants.map(variant=>`<p>${variant.map(id=>esc(getItem(state,id)?.name||id)).join(' + ')}</p>`).join('<span class="recipe-or">или</span>');
+ }
+ return `<p>${esc(item.recipeText).replace(/\n/g,'<br>')}</p>`;
+}
 function itemCard(i,a){
  const have=a?owned(state,a,i):0,hasRecipe=i.recipeText&&i.recipeText!=='-',hasPrice=i.price!==null&&i.price!==undefined;
  return `<article class="item-card panel"><div class="item-card-top"><h3>${esc(i.name)}</h3><div class="item-card-controls"><button class="icon-button" data-action="editItem" data-id="${i.id}" aria-label="Настроить ${esc(i.name)}">${icon('settings')}</button></div></div>
   ${i.category==='tools'&&i.effect===`Уровень инструмента: ${i.toolLevel}`?'':`<p class="item-effect">${esc(i.effect)}</p>`}
-  ${hasRecipe?`<details class="recipe-preview"><summary>Рецепт крафта</summary><p>${esc(i.recipeText).replace(/\n/g,'<br>')}</p></details>`:''}
+  ${hasRecipe?`<details class="recipe-preview"><summary>Рецепт крафта</summary>${recipeDescription(i)}</details>`:''}
   ${hasPrice||have?`<div class="item-bottom">${hasPrice?`<div class="price"><strong>${num(i.price)}</strong><span>крышечек</span></div>`:''}${have?`<span class="owned-label has-item">${icon('check')} ${i.kind==='graviton'?`${have} гравитонов`:i.category==='upgrades'?'Установлено':i.category==='access'?'Доступ открыт':`Есть: ${have}`}</span>`:''}</div>`:''}
   <div class="item-actions">${button(!isAdmin()||!hasPrice?'Подробнее':'Купить','item','secondary',`data-id="${i.id}"`)}${i.recipe||i.recipeIssue?button('Крафт','craft','ghost',`data-id="${i.id}"`):''}</div>
  </article>`;
 }
-function historyPage(){return `<div class="toolbar">${searchBox('Найти событие или альянс…')}<div class="toolbar-actions">${button(`${icon('trophy')} Результаты мероприятия`,'eventResults')}${button(`${icon('download')} Экспорт`,'export')}</div></div><div class="panel history-panel">${state.events.filter(e=>match(e.title)||match(e.detail)||match(state.alliances.find(a=>a.id===e.allianceId)?.name||'')).map(eventRow).join('')||empty('Тишина в эфире','Запишите первые результаты вашей смены.')}</div>`;}
+function historyPage(){return `<div class="toolbar">${searchBox('Найти событие или альянс…')}<div class="toolbar-actions">${button(`${icon('trophy')} Результаты события`,'eventResults')}${button(`${icon('download')} Экспорт`,'export')}</div></div><div class="panel history-panel">${state.events.filter(e=>match(e.title)||match(e.detail)||match(state.alliances.find(a=>a.id===e.allianceId)?.name||'')).map(eventRow).join('')||empty('Тишина в эфире','Запишите первые результаты путешествия.')}</div>`;}
 // Modal forms use the same model functions as automated domain tests.
 function modal(title,content){const d=document.querySelector('#modal');d.innerHTML=`<div class="modal-header"><h2>${title}</h2><button class="icon-button" data-action="close" aria-label="Закрыть">${icon('close')}</button></div>${content}`;applyAccessControls();d.showModal();}
 const field=(label,html)=>`<label class="field"><span>${label}</span>${html}</label>`;
@@ -1232,33 +1306,33 @@ const number=(name,value=0,min=0,max=1000000000)=>input(name,value,`type="number
 const submit=(label)=>`<p class="form-error" role="alert"></p><button class="button primary submit" type="submit">${label} ${icon('check')}</button>`;
 const intro=s=>`<p class="modal-intro">${s}</p>`;
 function requireAlliance(){if(!active()){toast('Сначала создайте альянс.',true);return false;}return true;}
-function adjustModal(resource='caps',childId=''){if(!requireAlliance())return;const a=active();modal('Обновить показатели',`${intro('Начисление и списание ресурсов записываются в хронику. Личный опыт также влияет на общий опыт альянса.')}<form data-form="adjust">${field('Альянс',`<select name="allianceId" id="adjust-alliance">${allianceOptions()}</select>`)}${field('Показатель',`<select name="resource" id="adjust-resource">${[['caps','Крышечки'],['xp','Опыт'],...roles.map(r=>[r.id,`${r.name} · ${r.id==='raiders'?'ОД':'репутация'}`]),['charge','Заряд интерфейса'],['cadiaAP','ОД на Кадии']].map(([id,title])=>`<option value="${id}" ${resource===id?'selected':''}>${title}</option>`).join('')}</select>`)}<div id="child-field" ${resource!=='xp'?'hidden':''}>${field('Получатель опыта',`<select name="childId" id="adjust-child">${childOptions(a,childId)}</select>`)}</div>${field('Изменение (+ начислить, − списать)',number('amount',50,-1000000000))}${field('Причина',input('reason','',`placeholder="За мероприятие, помощь альянсу…" maxlength="160" required`))}${submit('Сохранить изменение')}</form>`);}
+function adjustModal(resource='caps',childId=''){if(!requireAlliance())return;const a=active();modal('Обновить показатели',`${intro('Начисление и списание ресурсов записываются в хронику. Личный опыт также влияет на общий опыт альянса.')}<form data-form="adjust">${field('Альянс',`<select name="allianceId" id="adjust-alliance">${allianceOptions()}</select>`)}${field('Показатель',`<select name="resource" id="adjust-resource">${[['caps','Крышечки'],['xp','Опыт'],...roles.map(r=>[r.id,`${r.name} · ${r.id==='raiders'?'ОД':'репутация'}`]),['charge','Заряд интерфейса'],['cadiaAP','ОД на Кадии']].map(([id,title])=>`<option value="${id}" ${resource===id?'selected':''}>${title}</option>`).join('')}</select>`)}<div id="child-field" ${resource!=='xp'?'hidden':''}>${field('Получатель опыта',`<select name="childId" id="adjust-child">${childOptions(a,childId)}</select>`)}</div>${field('Изменение (+ начислить, − списать)',number('amount',50,-1000000000))}${field('Причина',input('reason','',`placeholder="За событие, помощь альянсу…" maxlength="160" required`))}${submit('Сохранить изменение')}</form>`);}
 function childOptions(a,childId=''){return '<option value="">Всему альянсу</option>'+a.children.map(c=>`<option value="${c.id}" ${c.id===childId?'selected':''}>${esc(c.name)}</option>`).join('');}
-function allianceModal(edit=false){const a=edit?active():null;modal(edit?'Настройки альянса':'Новый альянс',`<form data-form="${edit?'editAlliance':'addAlliance'}">${field('Название альянса',input('name',a?.name||'','maxlength="60" required placeholder="Например, Орион"'))}${field('Девиз',input('motto',a?.motto||'К новым мирам — вместе','maxlength="140" required'))}${field('Символ и цвет',`<select name="color">${[['blue','Звезда · Голубой'],['purple','Орбита · Сиреневый'],['orange','Пульсар · Оранжевый'],['green','Щит · Зелёный'],['pink','Кристалл · Розовый']].map(([v,t])=>`<option value="${v}" ${a?.color===v?'selected':''}>${t}</option>`).join('')}</select>`)}${submit(edit?'Сохранить альянс':'Создать альянс')}</form>`);}
-function childModal(id){if(!requireAlliance())return;const a=active(),c=id?a.children.find(c=>c.id===id):null;modal(c?'Участник альянса':'Новый искатель',`<form data-form="${c?'editChild':'addChild'}" ${c?`data-id="${c.id}"`:''}>${field('Имя участника',input('name',c?.name||'','maxlength="60" required placeholder="Например, Аня К."'))}${field('Подфункция',`<select name="role">${roles.map(r=>`<option value="${r.id}" ${c?.role===r.id?'selected':''}>${r.name}</option>`).join('')}</select>`)}${intro('Можно использовать имя и первую букву фамилии. Опыт изменяется через начисление показателей.')}${submit(c?'Сохранить':'Добавить участника')}</form>`);}
-function eventModal(){if(!requireAlliance())return;modal('Результаты мероприятия',`${intro('Укажите занятые места и фактические награды. Крышечки и опыт будут начислены всем отмеченным альянсам.')}<form data-form="eventResults">${field('Название мероприятия',input('name','','required maxlength="100" placeholder="Например, Большая космическая эстафета"'))}<div class="results-table"><div class="results-head"><span>Альянс</span><span>Место</span><span>Крышечки</span><span>Опыт</span></div>${state.alliances.map((a,i)=>`<div class="result-row"><label><input type="checkbox" name="include-${a.id}" checked><span>${esc(a.name)}</span></label><input type="number" name="place-${a.id}" min="1" max="999" value="${i+1}" aria-label="Место ${esc(a.name)}"><input type="number" name="caps-${a.id}" min="0" max="1000000000" value="0" aria-label="Крышечки ${esc(a.name)}"><input type="number" name="xp-${a.id}" min="0" max="1000000000" value="0" aria-label="Опыт ${esc(a.name)}"></div>`).join('')}</div>${submit('Начислить награды')}</form>`);}
+function allianceModal(edit=false){const a=edit?active():null;modal(edit?'Настройки альянса':'Новый альянс',`<form data-form="${edit?'editAlliance':'addAlliance'}">${field('Название альянса',input('name',a?.name||'','maxlength="60" required placeholder="Например, Циолковского"'))}${field('Девиз',input('motto',a?.motto||'К новым мирам — вместе','maxlength="140" required'))}${field('Символ и цвет',`<select name="color">${[['blue','Звезда · Голубой'],['purple','Орбита · Сиреневый'],['orange','Пульсар · Оранжевый'],['green','Щит · Зелёный'],['pink','Кристалл · Розовый']].map(([v,t])=>`<option value="${v}" ${a?.color===v?'selected':''}>${t}</option>`).join('')}</select>`)}${submit(edit?'Сохранить альянс':'Создать альянс')}</form>`);}
+function childModal(id){if(!requireAlliance())return;const a=active(),c=id?a.children.find(c=>c.id===id):null;modal(c?'Искатель альянса':'Новый искатель',`<form data-form="${c?'editChild':'addChild'}" ${c?`data-id="${c.id}"`:''}>${field('Имя искателя',input('name',c?.name||'','maxlength="60" required placeholder="Например, Аня К."'))}${field('Подфункция',`<select name="role">${roles.map(r=>`<option value="${r.id}" ${c?.role===r.id?'selected':''}>${r.name}</option>`).join('')}</select>`)}${intro('Можно использовать имя и первую букву фамилии. Опыт изменяется через начисление показателей.')}${submit(c?'Сохранить':'Добавить искателя')}</form>`);}
+function eventModal(){if(!requireAlliance())return;modal('Результаты события',`${intro('Укажите места и награды. Можно подставить награды по механике и изменить их перед начислением.')}<form data-form="eventResults">${field('Название события',input('name','','required maxlength="100" placeholder="Например, Исследование макробиома"'))}<button class="button secondary" type="button" data-action="fillEventRewards">Заполнить награды по местам</button><div class="results-table"><div class="results-head"><span>Альянс</span><span>Место</span><span>Крышечки</span><span>Опыт</span></div>${state.alliances.map((a,i)=>`<div class="result-row"><label><input type="checkbox" name="include-${a.id}" checked><span>${esc(a.name)}</span></label><input type="number" name="place-${a.id}" min="1" max="999" value="${i+1}" aria-label="Место ${esc(a.name)}"><input type="number" name="caps-${a.id}" min="0" max="1000000000" value="0" aria-label="Крышечки ${esc(a.name)}"><input type="number" name="xp-${a.id}" min="0" max="1000000000" value="0" aria-label="Опыт ${esc(a.name)}"></div>`).join('')}</div>${submit('Начислить награды')}</form>`);}
 function interfaceModal(id){
  const a=getAlliance(state,id),f=a.interface;
  modal(`Интерфейс · ${esc(a.name)}`,`<form data-form="interface" data-id="${id}">${field('Название интерфейса',input('name',f.name,'maxlength="80" required'))}<div class="two-fields">${field('Заряд',number('charge',f.charge))}${field('Гравитоны',number('gravitons',f.gravitons))}</div>${submit('Обновить показатели')}</form>`);
 }
-function planetModal(){if(!requireAlliance())return;const title=planet==='cadia'?'Захват аванпоста':planet==='fenris'?'Исследование территории':'Шаттл альянса';modal(title,`<form data-form="planet"><span class="pill">${esc(active().name)} · ${planets.find(p=>p.id===planet).name}</span>${field('Название',input('name','','maxlength="80" required'))}${planet==='cadia'?`${intro('Запишите бонус аванпоста. Он начисляется отдельной кнопкой один раз для этой записи.')}<div class="two-fields">${field('Бонус · крышечки',number('caps'))}${field('Бонус · опыт',number('xp'))}${field('Бонус · ОД на Кадии',number('actionPoints'))}${field('Количество инструментов',number('quantity',1,1,999))}</div>${field('Бонус · инструмент',`<select name="toolId"><option value="">Без инструмента</option>${allItems(state).filter(i=>i.category==='tools').map(i=>`<option value="${i.id}">${esc(i.name)} · ур. ${i.toolLevel}</option>`).join('')}</select>`)}`:field(planet==='fenris'?'Что обнаружили':'Описание / статус',`<textarea name="note" rows="3" maxlength="300" placeholder="Заметка организатора"></textarea>`)}${submit('Записать операцию')}</form>`);}
+function planetModal(){if(!requireAlliance())return;const title=planet==='cadia'?'Захват аванпоста':planet==='fenris'?'Исследование территории':'Шаттл альянса';modal(title,`<form data-form="planet"><span class="pill">${esc(active().name)} · ${planets.find(p=>p.id===planet).name}</span>${field('Название',input('name','','maxlength="80" required'))}${planet==='cadia'?`${intro('Бонус начисляется один раз при каждой следующей высадке. После захвата начните следующую высадку, чтобы получить награду.')}<div class="two-fields">${field('Бонус · крышечки',number('caps'))}${field('Бонус · опыт',number('xp'))}${field('Бонус · ОД на Кадии',number('actionPoints'))}${field('Количество инструментов',number('quantity',1,1,999))}</div>${field('Бонус · инструмент',`<select name="toolId"><option value="">Без инструмента</option>${allItems(state).filter(i=>i.category==='tools').map(i=>`<option value="${i.id}">${esc(i.name)} · ур. ${i.toolLevel}</option>`).join('')}</select>`)}`:field(planet==='fenris'?'Что обнаружили':'Описание / статус',`<textarea name="note" rows="3" maxlength="300" placeholder="Заметка прайма"></textarea>`)}${submit('Записать операцию')}</form>`);}
 function itemModal(id){
  const i=getItem(state,id);if(!i)return;const a=active(),have=a?owned(state,a,i):0,hasPrice=i.price!==null&&i.price!==undefined;
- modal(esc(i.name),`<span class="pill">${categories[i.category].name}${i.category==='tools'?` · Уровень ${i.toolLevel}`:''}</span>${intro(esc(i.effect))}${i.recipeText&&i.recipeText!=='-'?`<div class="recipe-detail"><strong>Рецепт</strong><p>${esc(i.recipeText).replace(/\n/g,'<br>')}</p></div>`:''}<div class="purchase-summary"><span>${a?`Альянс ${esc(a.name)}`:'Альянс не выбран'}</span>${hasPrice?`<strong>${num(i.price)} крышечек</strong>`:''}</div>${intro(a?`Баланс: ${num(a.caps)} крышечек.${have?` Во владении: ${have}.`:''}`:'Сначала создайте альянс.')}${!isAdmin()?intro('Покупки и крафт отмечает организатор смены.'):!hasPrice?button('Указать цену','editItem','secondary',`data-id="${id}"`):`<form data-form="purchase" data-id="${id}">${submit('Подтвердить покупку')}</form>`}<div class="modal-secondary-actions">${i.recipe||i.recipeIssue?button('Скрафтить','craft','secondary',`data-id="${id}"`):''}${button('Выдать вручную','grant','ghost',`data-id="${id}"`)}</div>`);
+ modal(esc(i.name),`<span class="pill">${categories[i.category].name}${i.category==='tools'?` · Уровень ${i.toolLevel}`:''}</span>${intro(esc(i.effect))}${i.recipeText&&i.recipeText!=='-'?`<div class="recipe-detail"><strong>Рецепт</strong>${recipeDescription(i)}</div>`:''}<div class="purchase-summary"><span>${a?`Альянс ${esc(a.name)}`:'Альянс не выбран'}</span>${hasPrice?`<strong>${num(i.price)} крышечек</strong>`:''}</div>${intro(a?`Баланс: ${num(a.caps)} крышечек.${have?` Во владении: ${have}.`:''}`:'Сначала создайте альянс.')}${!isAdmin()?intro('Покупки и крафт отмечает прайм.'):!hasPrice?button('Указать цену','editItem','secondary',`data-id="${id}"`):`<form data-form="purchase" data-id="${id}">${submit('Подтвердить покупку')}</form>`}<div class="modal-secondary-actions">${i.recipe||i.recipeIssue?button('Скрафтить','craft','secondary',`data-id="${id}"`):''}${button('Выдать вручную','grant','ghost',`data-id="${id}"`)}</div>`);
 }
 function craftModal(id){if(!requireAlliance())return;const i=getItem(state,id),a=active();if(!i)return;if(i.recipeIssue||!i.recipe){modal('Рецепт требует настройки',`${intro(esc(i.recipeIssue||'Рецепт отсутствует.'))}${button('Настроить рецепт','editItem','primary',`data-id="${id}"`)}`);return;}if(i.needsRecipeReview&&!i.recipeConfirmed){modal('Подтвердите состав рецепта',`${intro('В исходном списке ингредиенты разделены строками или знаками. Проверьте перенесённый состав перед первым крафтом.')}${intro(esc(i.recipeText).replace(/\n/g,'<br>'))}${button('Проверить и настроить рецепт','editItem','primary',`data-id="${id}"`)}`);return;}
  let fields='';if(i.recipe.type==='anyTools'){const options=allItems(state).filter(t=>t.category==='tools'&&t.toolLevel>=i.recipe.minLevel&&(a.inventory[t.id]||0)>0);fields=`${intro(`Нужно ${i.recipe.count} инструмента${i.recipe.minLevel?` уровня ${i.recipe.minLevel}+`:''}. Можно использовать два экземпляра одного инструмента, если они есть в инвентаре.`)}${Array.from({length:i.recipe.count},(_,n)=>field(`Инструмент ${n+1}`,`<select name="ingredient-${n}" required><option value="">Выберите инструмент</option>${options.map(t=>`<option value="${t.id}">${esc(t.name)} · ур. ${t.toolLevel} · есть ${a.inventory[t.id]}</option>`).join('')}</select>`)).join('')}`;}else fields=field('Вариант рецепта',`<select name="variant">${i.recipe.variants.map((v,n)=>`<option value="${n}">${v.map(id=>esc(getItem(state,id)?.name||id)).join(' + ')}</option>`).join('')}</select>`);
  modal(`Крафт · ${esc(i.name)}`,`${intro(esc(i.effect))}<div class="warning subtle">Ингредиенты будут израсходованы.${state.rules.craftCostsCaps?` Также списывается цена: ${i.price===null?'не задана':`${num(i.price)} крышечек`}.`:' Крышечки за крафт не списываются (правило меняется в настройках).'}</div><form data-form="craft" data-id="${id}">${fields}<div class="recipe-stock">${i.recipe.type==='specific'?[...new Set(i.recipe.variants.flat())].map(id=>`<span>${esc(getItem(state,id)?.name||id)} <b>${a.inventory[id]||0} шт.</b></span>`).join(''):''}</div>${submit('Скрафтить и списать ингредиенты')}</form>`);
 }
 function itemSettingsModal(id){const i=getItem(state,id);if(!i)return;const variants=i.recipe?.type==='specific'?i.recipe.variants:[];modal(`Настройки · ${esc(i.name)}`,`<form data-form="itemSettings" data-id="${id}">${field('Цена в крышечках (пусто — не задана)',input('price',i.price===null?'':i.price,'type="number" min="0" max="1000000000"'))}${field('Эффект',`<textarea name="effect" rows="3" maxlength="2000" required>${esc(i.effect)}</textarea>`)}${i.category==='tools'?field('Уровень инструмента',number('toolLevel',i.toolLevel,1,999)):''}<div class="recipe-detail"><strong>Исходный рецепт</strong><p>${esc(i.recipeText||'Не задан').replace(/\n/g,'<br>')}</p></div>${i.recipeIssue?`<div class="warning">${esc(i.recipeIssue)}</div>`:''}${i.recipe?.type==='anyTools'?`${field('Количество инструментов для крафта',number('toolCount',i.recipe.count,1,10))}${field('Минимальный уровень инструмента',number('minLevel',i.recipe.minLevel,0,999))}`:`${variants.length?`<div class="recipe-variants">${variants.map((v,n)=>`<div><span>Вариант ${n+1}</span><p>${v.map(id=>esc(getItem(state,id)?.name||id)).join(' + ')}</p></div>`).join('')}</div>`:''}${field('Заменить рецепт (необязательно)',`<select name="recipeMode"><option value="keep">Сохранить текущий состав</option><option value="replace">Задать новый состав ниже</option><option value="none">Убрать рецепт</option></select>`)}<div class="recipe-edit-fields">${[1,2,3].map(n=>field(`Ингредиент ${n}`,`<select name="recipe-${n}"><option value="">Не выбран</option>${allItems(state).filter(t=>['tools','equipment'].includes(t.category)&&t.id!==id).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>`)).join('')}</div>`}${i.recipe&&i.recipe.type!=='anyTools'?`<label class="checkbox-field"><input type="checkbox" name="recipeConfirmed" ${i.recipeConfirmed?'checked':''}> Подтверждаю состав и варианты рецепта</label>`:''}${submit('Сохранить настройки товара')}</form>`);}
-function grantModal(id){if(!requireAlliance())return;const i=getItem(state,id);modal(`Выдать · ${esc(i.name)}`,`${intro('Ручная выдача за мероприятие или перенос начальных данных. Крышечки не списываются.')}<form data-form="grant" data-id="${id}">${field('Количество',number('quantity',1,1,999))}${field('Причина',input('reason','','required maxlength="160" placeholder="Награда за мероприятие / перенос данных"'))}${submit('Выдать альянсу')}</form>`);}
+function grantModal(id){if(!requireAlliance())return;const i=getItem(state,id);modal(`Выдать · ${esc(i.name)}`,`${intro('Ручная выдача за событие или перенос начальных данных. Крышечки не списываются.')}<form data-form="grant" data-id="${id}">${field('Количество',number('quantity',1,1,999))}${field('Причина',input('reason','','required maxlength="160" placeholder="Награда за событие / перенос данных"'))}${submit('Выдать альянсу')}</form>`);}
 function inventoryModal(){if(!requireAlliance())return;const a=active(),items=Object.entries(a.inventory).map(([id,n])=>({item:getItem(state,id),n}));modal(`Инвентарь · ${esc(a.name)}`,`${intro('Предметы и инструменты альянса. При крафте ингредиенты списываются автоматически.')}<div class="inventory-list">${items.map(({item:i,n})=>`<div class="inventory-row"><span class="item-icon ${i.category==='tools'?'green':'purple'}">${icon(i.category==='tools'?'wrench':'box')}</span><div><strong>${esc(i.name)}</strong><small>${i.category==='tools'?`Уровень ${i.toolLevel}`:'Предмет / способность'}</small></div><b>×${n}</b><button class="icon-button" data-action="spendItem" data-id="${i.id}" aria-label="Списать ${esc(i.name)}">${icon('trash')}</button></div>`).join('')||'<p class="panel-note">Инвентарь пуст. Купите или выдайте первые предметы.</p>'}</div>`);}
 function spendModal(id){const i=getItem(state,id);modal(`Списать · ${esc(i.name)}`,`<form data-form="spend" data-id="${id}">${field('Количество',number('quantity',1,1,owned(state,active(),i)))}${field('Причина',input('reason','','required maxlength="160" placeholder="Использован в игре / потерян"'))}${submit('Подтвердить списание')}</form>`);}
-function addItemModal(){const category=page==='equipment'?equipmentTab:categories[page]?page:'equipment';modal('Новый товар смены',`<form data-form="addItem">${field('Раздел',`<select name="category">${Object.entries(categories).map(([id,c])=>`<option value="${id}" ${id===category?'selected':''}>${c.name}</option>`).join('')}</select>`)}${field('Название',input('name','','maxlength="100" required'))}${field('Цена (пусто — не задана)',input('price','','type="number" min="0" max="1000000000"'))}${field('Эффект',`<textarea name="effect" rows="3" required maxlength="2000"></textarea>`)}${field('Уровень, если это инструмент',number('toolLevel',1,1,999))}${submit('Добавить товар')}</form>`);}
-function settingsModal(){modal('Правила вашей смены',`<form data-form="settings">${field('Название смены',input('name',state.shift.name,'required maxlength="80"'))}<div class="two-fields">${field('Текущий сол',number('day',state.shift.day,1,state.shift.duration))}${field('Солов в смене',number('duration',state.shift.duration,1,365))}</div>${field('Пороги опыта для уровней 1, 2, 3…',input('levelThresholds',state.rules.levelThresholds.join(', '),'required'))}${intro('Пороги начинаются с 0 и растут: например 0, 500, 1000. Укажите пороги вашей смены. Уровни за опыт пересчитаются, найденные на карте уровни сохранятся.')}<label class="checkbox-field"><input name="craftCostsCaps" type="checkbox" ${state.rules.craftCostsCaps?'checked':''}> При крафте также списывать цену в крышечках</label>${intro('Ингредиенты крафта всегда расходуются. Покупка за крышечки и крафт доступны как отдельные операции. При переходе к другому солу список купленных доступов очищается, история покупок сохраняется.')}${submit('Сохранить правила')}</form><div class="settings-backup"><h3>Сохранение и перенос</h3>${intro('Изменения сохраняются на сервере и видны зрителям. Сохраняйте резервные копии перед переносом или очисткой данных.')}<div class="backup-actions">${button(`${icon('download')} Экспорт JSON`,'export')}${button('Загрузить копию','import')}${button('HTML для зрителей','downloadSnapshot')}${hasLegacy?button('Копия прежнего прототипа','exportLegacy','ghost'):''}</div><input type="file" id="import-file" accept=".json,application/json" hidden><button class="text-button reset-link" data-action="reset">Начать чистую космическую смену</button></div>`);}
+function addItemModal(){const category=page==='equipment'?equipmentTab:categories[page]?page:'equipment';modal('Новый предмет',`<form data-form="addItem">${field('Раздел',`<select name="category">${Object.entries(categories).map(([id,c])=>`<option value="${id}" ${id===category?'selected':''}>${c.name}</option>`).join('')}</select>`)}${field('Название',input('name','','maxlength="100" required'))}${field('Цена (пусто — не задана)',input('price','','type="number" min="0" max="1000000000"'))}${field('Эффект',`<textarea name="effect" rows="3" required maxlength="2000"></textarea>`)}${field('Уровень, если это инструмент',number('toolLevel',1,1,999))}${submit('Добавить товар')}</form>`);}
+function settingsModal(){modal('Параметры путешествия',`<form data-form="settings">${field('Название путешествия',input('name',state.shift.name,'required maxlength="80"'))}<div class="two-fields">${field('Текущий сол',number('day',state.shift.day,1,state.shift.duration))}${field('Солов в путешествии',number('duration',state.shift.duration,1,365))}</div>${field('Пороги опыта для уровней 1, 2, 3…',input('levelThresholds',state.rules.levelThresholds.join(', '),'required'))}${intro('Пороги начинаются с 0 и растут: например 0, 100, 200. Укажите пороги путешествия. Уровни за опыт пересчитаются, найденные на карте уровни сохранятся.')}<label class="checkbox-field"><input name="craftCostsCaps" type="checkbox" ${state.rules.craftCostsCaps?'checked':''}> При крафте также списывать цену в крышечках</label>${intro('Ингредиенты крафта всегда расходуются. Покупка за крышечки и крафт доступны как отдельные операции. При переходе к другому солу полученные возможности устройств закрываются, история покупок сохраняется.')}${submit('Сохранить правила')}</form><div class="settings-backup"><h3>Сохранение и перенос</h3>${intro('Изменения сохраняются на сервере и видны зрителям. Сохраняйте резервные копии перед переносом или очисткой данных.')}<div class="backup-actions">${button(`${icon('download')} Экспорт JSON`,'export')}${button('Загрузить копию','import')}${button('HTML для зрителей','downloadSnapshot')}${hasLegacy?button('Копия прежнего прототипа','exportLegacy','ghost'):''}</div><input type="file" id="import-file" accept=".json,application/json" hidden><button class="text-button reset-link" data-action="reset">Начать новое путешествие</button></div>`);}
 function downloadJSON(data,name){const blob=new Blob([typeof data==='string'?data:JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Резервная копия выгружена.');}
 function exportData(){downloadJSON(state,'genesis-backup.json');}
-async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmin()&&!readActions.has(action))throw Error('Редактирование доступно только организатору.');
+async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmin()&&!readActions.has(action))throw Error('Редактирование доступно только прайму.');
  if(action==='noop')return;
  if(action==='login')return loginModal();
  if(action==='logout'){await api('/api/logout',{method:'POST',body:'{}'});auth={role:'viewer',configured:true};render();toast('Вы вышли. Теперь доступен только просмотр.');return;}
@@ -1278,9 +1352,19 @@ async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmi
  if(action==='addChild')childModal();
  if(action==='editChild')childModal(id);
  if(action==='eventResults')eventModal();
+ if(action==='fillEventRewards'){
+  const form=b.closest('form');let filled=0;
+  for(const a of state.alliances){
+   const reward=eventRewards.find(r=>r.place===Number(form.elements[`place-${a.id}`].value));
+   if(reward){form.elements[`caps-${a.id}`].value=reward.caps;form.elements[`xp-${a.id}`].value=reward.xp;filled++;}
+  }
+  toast(filled?'Награды подставлены. Проверьте их перед начислением.':'Для указанных мест нет готовых наград.');
+ }
  if(action==='openPlanet'){planet=b.dataset.planet;navigate('planets');}
  if(action==='planetTab'){planet=b.dataset.planet;render();}
  if(action==='addPlanet')planetModal();
+ if(action==='startLanding')modal('Начать высадку на Кадию?',`${intro('Начнётся новая высадка. Очки действий будут установлены на 8, с десантным форсажем — на 10. Бонусы ранее захваченных аванпостов можно будет получить снова.')}<div class="backup-actions">${button('Отмена','close')}${button('Начать высадку','confirmLanding','primary')}</div>`);
+ if(action==='confirmLanding'){await mutate(()=>startCadiaLanding(state,activeId));render();toast('Высадка началась.');}
  if(action==='claimBonus'){await mutate(()=>claimOutpostBonus(state,activeId,id));render();toast('Бонус аванпоста начислен.');}
  if(action==='removePlanet')modal('Снять объект с учёта?',`${intro('Запись будет удалена из текущего прогресса планеты. Ранее начисленные бонусы не отменяются.')}<div class="backup-actions">${button('Отмена','close')}${button('Подтвердить','confirmRemovePlanet','primary',`data-id="${id}"`)}</div>`);
  if(action==='confirmRemovePlanet'){await mutate(()=>removePlanetRecord(state,activeId,planet,id));render();toast('Объект снят с учёта.');}
@@ -1296,10 +1380,10 @@ async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmi
  if(action==='gotoEquipment')navigate('equipment');
  if(action==='addItem')addItemModal();
  if(action==='export')exportData();
- if(action==='exportLegacy'){try{downloadJSON(localStorage.getItem(LEGACY_KEY),'smena-legacy-backup.json');}catch{toast('Хранилище недоступно.',true);}}
+ if(action==='exportLegacy'){try{downloadJSON(localStorage.getItem(LEGACY_KEY),'genesis-legacy-backup.json');}catch{toast('Хранилище недоступно.',true);}}
  if(action==='import')document.querySelector('#import-file').click();
- if(action==='reset')modal('Начать чистую смену?',`${intro('Все альянсы, участники, планетарный прогресс, инвентари и события будут удалены из этого браузера. Каталоги, цены и правила вашей смены сохранятся. Выгрузите копию перед очисткой.')}<div class="backup-actions">${button('Экспортировать данные','export')}${button('Отмена','close')}</div>${button('Удалить данные и начать смену','confirmReset','primary submit')}`);
- if(action==='confirmReset'){await mutate(()=>{state={...state,alliances:[],events:[]};});activeId='';render();toast('Создайте ваши альянсы — новая смена начинается.');}
+ if(action==='reset')modal('Начать новое путешествие?',`${intro('Все альянсы, искатели, планетарный прогресс, инвентари и события будут удалены из общей базы. Каталоги, цены и правила путешествия сохранятся. Выгрузите копию перед очисткой.')}<div class="backup-actions">${button('Экспортировать данные','export')}${button('Отмена','close')}</div>${button('Очистить данные и начать путешествие','confirmReset','primary submit')}`);
+ if(action==='confirmReset'){await mutate(()=>{state={...state,alliances:[],events:[]};});activeId='';render();toast('Создайте альянсы для нового путешествия.');}
 }
 document.addEventListener('click',async e=>{const p=e.target.closest('[data-page]');if(p){navigate(p.dataset.page);return;}const b=e.target.closest('[data-action]');if(b)try{await handleAction(b);}catch(err){toast(err.message,true);}if(e.target.id==='modal'){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
 document.addEventListener('input',e=>{if(e.target.id==='search'){const pos=e.target.selectionStart;search=e.target.value;render();const el=document.querySelector('#search');el.focus();try{el.setSelectionRange(pos,pos);}catch{}}});
@@ -1307,7 +1391,7 @@ document.addEventListener('change',async e=>{
  if(e.target.id==='active-alliance'){activeId=e.target.value;render();}
  if(e.target.id==='adjust-resource'){document.querySelector('#child-field').hidden=e.target.value!=='xp';if(e.target.value!=='xp')document.querySelector('#adjust-child').value='';}
  if(e.target.id==='adjust-alliance'){document.querySelector('#adjust-child').innerHTML=childOptions(getAlliance(state,e.target.value));}
- if(e.target.id==='import-file'&&e.target.files[0]){try{if(!isAdmin())throw Error('Только администратор может импортировать данные.');const file=e.target.files[0];if(file.size>5000000)throw Error('Максимальный размер копии — 5 МБ.');const data=JSON.parse(await file.text());if(!validateState(data))throw Error('Это не корректная резервная копия космической смены. Прежний лесной прототип использует другой формат.');modal('Восстановить космическую смену?',`${intro(`В копии «${esc(data.shift.name)}»: ${data.alliances.length} альянсов и ${data.events.length} событий. Текущие данные и настройки будут заменены.`)}<div class="backup-actions">${button('Экспорт текущих данных','export')}${button('Отмена','close')}</div><button class="button primary submit" id="confirm-import">Восстановить копию</button>`);document.querySelector('#confirm-import').onclick=async()=>{try{await mutate(()=>{state=data;});activeId=state.alliances[0]?.id||'';render();toast('Смена восстановлена.');}catch(err){toast(err.message,true);}};}catch(err){toast(err.message,true);}}
+ if(e.target.id==='import-file'&&e.target.files[0]){try{if(!isAdmin())throw Error('Только прайм может импортировать данные.');const file=e.target.files[0];if(file.size>5000000)throw Error('Максимальный размер копии — 5 МБ.');const data=JSON.parse(await file.text());if(!validateState(data))throw Error('Это не корректная резервная копия путешествия. Проверьте формат файла.');modal('Восстановить путешествие?',`${intro(`В копии «${esc(data.shift.name)}»: ${data.alliances.length} альянсов и ${data.events.length} событий. Текущие данные и настройки будут заменены.`)}<div class="backup-actions">${button('Экспорт текущих данных','export')}${button('Отмена','close')}</div><button class="button primary submit" id="confirm-import">Восстановить копию</button>`);document.querySelector('#confirm-import').onclick=async()=>{try{await mutate(()=>{state=data;});activeId=state.alliances[0]?.id||'';render();toast('Данные путешествия восстановлены.');}catch(err){toast(err.message,true);}};}catch(err){toast(err.message,true);}}
 });
 function processForm(kind,data,form){
  const a=active();
@@ -1315,7 +1399,7 @@ function processForm(kind,data,form){
  if(kind==='addAlliance'){const name=text(data.name,'Название',60);if(state.alliances.some(a=>a.name.toLowerCase()===name.toLowerCase()))throw Error('Альянс с таким названием уже существует.');const next=createAlliance(name,data.motto,data.color);state.alliances.push(next);activeId=next.id;page='alliances';log(state,next.id,'Альянс на связи',next.name);}
  if(kind==='editAlliance'){const name=text(data.name,'Название',60),motto=text(data.motto,'Девиз',140);if(state.alliances.some(x=>x.id!==a.id&&x.name.toLowerCase()===name.toLowerCase()))throw Error('Название уже занято.');a.name=name;a.motto=motto;a.color=data.color;log(state,a.id,'Обновлён альянс',name);}
  if(kind==='addChild'){a.children.push({id:uid(),name:text(data.name,'Имя',60),role:data.role,xp:0});log(state,a.id,'Новый искатель',data.name);}
- if(kind==='editChild'){const child=a.children.find(c=>c.id===form.dataset.id);child.name=text(data.name,'Имя',60);child.role=data.role;log(state,a.id,'Обновлён участник',child.name);}
+ if(kind==='editChild'){const child=a.children.find(c=>c.id===form.dataset.id);child.name=text(data.name,'Имя',60);child.role=data.role;log(state,a.id,'Обновлён искатель',child.name);}
  if(kind==='eventResults')recordEventResults(state,{name:data.name,results:state.alliances.filter(a=>data[`include-${a.id}`]).map(a=>({allianceId:a.id,place:data[`place-${a.id}`],caps:data[`caps-${a.id}`],xp:data[`xp-${a.id}`]}))});
  if(kind==='interface')updateInterface(state,form.dataset.id,data);
   if(kind==='bonusLevels')updateBonusLevels(state,a.id,data);
@@ -1337,14 +1421,14 @@ function processForm(kind,data,form){
  }
 }
 async function mutate(change){
- if(!isAdmin())throw Error('Войдите как организатор.');if(busy)throw Error('Дождитесь сохранения предыдущего изменения.');
+ if(!isAdmin())throw Error('Войдите как прайм.');if(busy)throw Error('Дождитесь сохранения предыдущего изменения.');
  busy=true;const previous=structuredClone(state);try{change();await save();}catch(err){state=previous;if(err.status===401){auth={role:'viewer',configured:true};render();}throw err;}finally{busy=false;}
 }
 document.addEventListener('submit',async e=>{
  const form=e.target.closest('[data-form]');if(!form)return;e.preventDefault();const data=Object.fromEntries(new FormData(form)),kind=form.dataset.form;
  const submitButton=form.querySelector('.submit');submitButton.disabled=true;
  try{
-  if(kind==='login'){const result=await api('/api/login',{method:'POST',body:JSON.stringify({password:data.password})});auth={...result,configured:true};await refreshRemote(true);render();toast('Вы вошли как организатор.');return;}
+  if(kind==='login'){const result=await api('/api/login',{method:'POST',body:JSON.stringify({password:data.password})});auth={...result,configured:true};await refreshRemote(true);render();toast('Вы вошли как прайм.');return;}
   await mutate(()=>processForm(kind,data,form));render();toast(kind==='craft'?'Крафт завершён. Ингредиенты израсходованы.':kind==='purchase'?'Покупка завершена. Крышечки списаны.':kind==='eventResults'?'Награды начислены всем выбранным альянсам.':'Изменения сохранены для всех зрителей.');
  }catch(err){form.querySelector('.form-error').textContent=err.message;if(!form.isConnected)toast(err.message,true);}finally{submitButton.disabled=false;}
 });

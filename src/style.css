@@ -617,3 +617,8 @@ dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding:
   .interface-values { gap: 18px; }
   .tool-level-group { margin-bottom: 28px; }
 }
+
+.landing-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.landing-toolbar p { color: var(--muted); font-size: 13px; margin: 0; }
+@media (max-width: 600px) { .landing-toolbar { align-items: flex-start; flex-direction: column; } }
+.recipe-or { color: var(--muted); display: block; font-size: 12px; }

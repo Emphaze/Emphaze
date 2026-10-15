@@ -28,7 +28,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(URL)
     page.wait_for_selector('.alliance-card')
-    page.get_by_role('button',name='Вход организатора',exact=True).click()
+    page.get_by_role('button',name='Вход прайма',exact=True).click()
     page.locator('[name=password]').fill(PASSWORD)
     page.locator('form .submit').click()
     page.wait_for_selector('.access-banner.admin')
@@ -73,13 +73,18 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     go('history')
     page.locator('[data-action=eventResults]').click()
     page.locator('[name=name]').fill('Космическая эстафета')
+    before_rewards = snapshot()
+    page.locator('[data-action=fillEventRewards]').click()
+    assert page.locator('[name="caps-alliance-1"]').input_value() == '1800'
+    assert page.locator('[name="xp-alliance-4"]').input_value() == '35'
+    assert snapshot() == before_rewards  # Filling a form never grants resources.
     for i in range(1,5):
         page.locator(f'[name="caps-alliance-{i}"]').fill(str(400-i*50))
         page.locator(f'[name="xp-alliance-{i}"]').fill(str(100))
     submit()
     assert first_alliance()['caps'] == 2830
     assert first_alliance()['earnedCaps'] == 3630
-    # Independent planetary tracking and a one-time, multi-resource outpost reward.
+    # New captures pay from the following landing, once per landing.
     go('planets')
     page.locator('[data-action=addPlanet]').click()
     page.locator('[name=name]').fill('Аванпост «Альфа»')
@@ -90,11 +95,15 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     page.locator('[name=quantity]').fill('2')
     submit()
     record = page.locator('.planet-record').filter(has=page.get_by_role('heading', name='Аванпост «Альфа»'))
+    assert record.locator('[data-action=claimBonus]').is_disabled()
+    page.locator('[data-action=startLanding]').click()
+    page.locator('[data-action=confirmLanding]').click()
+    page.locator('dialog[open]').wait_for(state='detached')
     record.locator('[data-action=claimBonus]').click()
     record.locator('[data-action=claimBonus][disabled]').wait_for()
     assert record.locator('[data-action=claimBonus]').is_disabled()
     assert first_alliance()['caps'] == 2980
-    assert first_alliance()['planets']['cadia']['actionPoints'] == 6
+    assert first_alliance()['planets']['cadia']['actionPoints'] == 10
     assert first_alliance()['inventory']['tool-6'] == 3
     page.locator('[data-action=planetTab][data-planet=fenris]').click()
     page.locator('[data-action=addPlanet]').click()
@@ -112,15 +121,19 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     assert page.locator('.interface-card').first.locator('.interface-values > div').count() == 2
     page.locator('[data-action=editInterface][data-id=alliance-1]').first.click()
     assert page.locator('dialog [name=maxCharge],dialog [name=resilience],dialog [name=gravitonsPurchased]').count() == 0
-    page.locator('[name=charge]').fill('150')
+    page.locator('[name=charge]').fill('250')
     page.locator('[name=gravitons]').fill('9')
     submit()
-    assert first_alliance()['interface']['charge'] == 150
+    assert first_alliance()['interface']['charge'] == 250
     assert first_alliance()['interface']['gravitons'] == 9
-    assert page.locator('.interface-card').first.locator('.interface-values > div').first.locator('strong').inner_text() == '150'
+    assert page.locator('.interface-card').first.locator('.interface-values > div').first.locator('strong').inner_text() == '250'
     # Upgrade purchase and craft use distinct operations.
     go('upgrades')
     assert page.locator('.item-card').count() == 27
+    split_recipe = page.locator('.item-card').filter(has=page.get_by_role('heading',name='Лазерный расщепитель I',exact=True)).locator('.recipe-preview')
+    split_recipe.locator('summary').click()
+    assert split_recipe.locator('p').count() == 2
+    assert split_recipe.locator('.recipe-or').inner_text() == 'или'
     item_action('item','upgrade-1')
     submit()
     assert first_alliance()['caps'] == 2680
@@ -196,8 +209,8 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     exported = json.load(open(backup))
     assert exported['version'] == 2
     assert exported['alliances'][0]['inventory']['tool-6'] == 4
-    page.get_by_role('button',name='Начать чистую космическую смену').click()
-    page.get_by_role('button',name='Удалить данные и начать смену').click()
+    page.get_by_role('button',name='Начать новое путешествие').click()
+    page.get_by_role('button',name='Очистить данные и начать путешествие').click()
     page.locator('dialog[open]').wait_for(state='detached')
     assert snapshot()['alliances'] == []
     assert snapshot()['itemOverrides']['equip-1']['price'] == 250
@@ -211,12 +224,34 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     page.get_by_role('button',name='Новый альянс',exact=True).click()
     page.locator('[name=name]').fill('Кассиопея')
     submit()
-    page.get_by_role('button',name='Участник',exact=True).click()
+    page.get_by_role('button',name='Искатель',exact=True).click()
     page.locator('[name=name]').fill('Соня К.')
     page.locator('[name=role]').select_option('astrobiologists')
     submit()
     assert snapshot()['alliances'][-1]['children'][0]['role'] == 'astrobiologists'
     assert snapshot()['alliances'][-1]['caps'] == 0
+    assert snapshot()['alliances'][-1]['interface']['charge'] == 200
+    assert snapshot()['alliances'][-1]['interface']['gravitons'] == 1
+    # Fresh alliance: a capture in landing 1 pays in landings 2 and 3.
+    go('planets')
+    page.locator('[data-action=planetTab][data-planet=cadia]').click()
+    def start_landing():
+        page.locator('[data-action=startLanding]').click()
+        page.locator('[data-action=confirmLanding]').click()
+        page.locator('dialog[open]').wait_for(state='detached')
+    start_landing()
+    page.locator('[data-action=addPlanet]').click()
+    page.locator('[name=name]').fill('Пост «Повтор»')
+    page.locator('[name=caps]').fill('10')
+    submit()
+    repeated = page.locator('.planet-record').filter(has=page.get_by_role('heading',name='Пост «Повтор»'))
+    assert repeated.locator('[data-action=claimBonus]').is_disabled()
+    for expected_caps in [10,20]:
+        start_landing()
+        repeated.locator('[data-action=claimBonus]').click()
+        repeated.locator('[data-action=claimBonus][disabled]').wait_for()
+        assert snapshot()['alliances'][-1]['caps'] == expected_caps
+        assert snapshot()['alliances'][-1]['planets']['cadia']['actionPoints'] == 8
     # Mobile navigation and overflow are tested in a fresh, uncontaminated profile.
     mobile = browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce')
     mobile.on('pageerror',lambda error:errors.append(str(error)))
@@ -233,9 +268,9 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         mobile.locator(f'nav [data-page="{target}"]').click()
         assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth'),target
     page.get_by_role('button',name='Выйти',exact=True).click()
-    page.get_by_role('button',name='Вход организатора',exact=True).wait_for()
+    page.get_by_role('button',name='Вход прайма',exact=True).wait_for()
     assert page.locator('.page-heading [data-action=adjust]').count()==0
     assert page.request.get(URL+'/api/session').json()['role']=='viewer'
     assert not errors,errors
-    print('PASS: currency/XP/roles, event awards, all three planets, one-time bonuses, interface limits, purchases, edited prices, consuming craft, recipe review, tool levels, search, XP thresholds, backups, reset, new alliances/children and all mobile pages. No JavaScript errors.')
+    print('PASS: currency/XP/roles, editable reward presets, all planets, recurring landing bonuses, interface defaults, purchases, consuming craft, tool levels, backups, owner/viewer permissions and all mobile pages. No JavaScript errors.')
     browser.close()

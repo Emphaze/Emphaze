@@ -27,10 +27,10 @@ export function updateBonusLevels(state,id,values) {
  a.bonusLevels=bonusLevels;log(state,id,reason,`Дополнительные уровни: ${before} → ${bonusLevels}`,'level');
 }
 export function createAlliance(name,motto='К новым мирам — вместе',color='blue') {
- return { id:uid(),name:text(name,'Название',60),motto:text(motto,'Девиз',140),color,caps:0,earnedCaps:0,xp:0,functions:Object.fromEntries(roles.map(r=>[r.id,0])), interface:{name:`Интерфейс «${name.trim()}»`,charge:0,maxCharge:100,gravitons:0,resilience:0}, inventory:{},upgrades:[],access:[],children:[],planets:{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}} };
+ return { id:uid(),name:text(name,'Название',60),motto:text(motto,'Девиз',140),color,caps:0,earnedCaps:0,xp:0,functions:Object.fromEntries(roles.map(r=>[r.id,0])), interface:{name:`Интерфейс «${name.trim()}»`,charge:200,maxCharge:200,gravitons:1,resilience:0}, inventory:{},upgrades:[],access:[],children:[],planets:{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}} };
 }
 export function initialState(empty=false) {
- const state={version:2,shift:{name:'Космическая одиссея',day:7,duration:11},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
+ const state={version:2,shift:{name:'Генезис',day:7,duration:11},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
  if(empty)return state;
  const rows=[['Орион','Первым открывать неизведанное','blue',2480,1840,[34,28,19,22,6]],['Андромеда','Знание — наша сверхсила','purple',1920,1620,[21,38,30,25,5]],['Сириус','Дальше звёзд. Ближе друг к другу','orange',1650,1450,[31,20,27,18,8]],['Пегас','Вселенная начинается с команды','green',1380,1280,[24,22,35,20,4]]];
  rows.forEach(([name,motto,color,caps,xp,values],i)=>{
@@ -53,11 +53,11 @@ function checkSum(value,delta,label) {return integer(value+delta,label);}
 export function adjustResource(state,{allianceId,resource,amount,reason,childId}) {
  const a=getAlliance(state,allianceId);const delta=integer(amount,'Изменение',-MAX_NUMBER,MAX_NUMBER);if(!delta)throw Error('Изменение не может быть нулевым.');const why=text(reason,'Причина',160);
  const group=roles.find(r=>r.id===resource);if(!group&&!['caps','xp','charge','resilience','cadiaAP'].includes(resource))throw Error('Неизвестный показатель.');
- const child=childId?a.children.find(c=>c.id===childId):null;if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт начисляется участнику выбранного альянса.');
+ const child=childId?a.children.find(c=>c.id===childId):null;if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт начисляется искателю выбранного альянса.');
  let current=group?a.functions[resource]:resource==='charge'||resource==='resilience'?a.interface[resource]:resource==='cadiaAP'?a.planets.cadia.actionPoints:a[resource];
  const next=checkSum(current,delta,'Итоговый показатель');
  const earned=resource==='caps'&&delta>0?checkSum(a.earnedCaps,delta,'Заработанные крышечки'):a.earnedCaps;
- const childXP=child?checkSum(child.xp,delta,'Опыт участника'):null;
+ const childXP=child?checkSum(child.xp,delta,'Опыт искателя'):null;
  if(group)a.functions[resource]=next;else if(resource==='charge'||resource==='resilience')a.interface[resource]=next;else if(resource==='cadiaAP')a.planets.cadia.actionPoints=next;else a[resource]=next;
  if(resource==='charge'){if(next>a.interface.maxCharge)a.interface.maxChargeKnown=false;a.interface.maxCharge=Math.max(1,a.interface.maxCharge,next);}
  if(child)child.xp=childXP;a.earnedCaps=earned;
@@ -65,7 +65,7 @@ export function adjustResource(state,{allianceId,resource,amount,reason,childId}
  log(state,allianceId,why,`${child?`${child.name} · `:''}${labels[resource]}: ${delta>0?'+':''}${delta}`,'reward');
 }
 export function recordEventResults(state,{name,results}) {
- const title=text(name,'Мероприятие',100);if(!Array.isArray(results)||!results.length)throw Error('Добавьте результаты.');
+ const title=text(name,'Событие',100);if(!Array.isArray(results)||!results.length)throw Error('Добавьте результаты.');
  const seen=new Set();const checked=results.map(r=>{const a=getAlliance(state,r.allianceId);if(seen.has(a.id))throw Error('Альянс указан дважды.');seen.add(a.id);const caps=integer(r.caps,'Крышечки'),xp=integer(r.xp,'Опыт'),place=integer(r.place,'Место',1,999);return {a,caps,xp,place,newCaps:checkSum(a.caps,caps,'Баланс'),newEarned:checkSum(a.earnedCaps,caps,'Заработано'),newXP:checkSum(a.xp,xp,'Опыт')};});
  checked.forEach(({a,caps,xp,place,newCaps,newEarned,newXP})=>{a.caps=newCaps;a.earnedCaps=newEarned;a.xp=newXP;log(state,a.id,title,`${place}-е место · +${caps} крышечек · +${xp} опыта`,'event');});
 }
@@ -89,13 +89,35 @@ export function addPlanetRecord(state,id,planet,values) {
  let record={id:uid(),name};if(planet==='cadia'){
   const toolId=values.toolId||null;const tool=toolId?getItem(state,toolId):null;if(toolId&&(!tool||tool.category!=='tools'))throw Error('Выберите инструмент из каталога.');
   record.bonus={caps:integer(values.caps,'Бонус крышечек'),xp:integer(values.xp,'Бонус опыта'),actionPoints:integer(values.actionPoints,'Бонус ОД'),toolId,quantity:toolId?integer(values.quantity,'Количество инструментов',1,999):0};record.claimed=false;
+  record.capturedCycle=integer(a.planets.cadia.bonusCycle??0,'Номер высадки');
  }else record.note=typeof values.note==='string'?values.note.trim().slice(0,300):'';
  list.push(record);log(state,id,planet==='cadia'?'Захвачен аванпост':planet==='fenris'?'Исследована территория':'Новый шаттл во флоте',name,'planet');return record.id;
 }
+export function startCadiaLanding(state,id) {
+ const a=getAlliance(state,id),cadia=a.planets.cadia;
+ const previous=cadia.bonusCycle===undefined?0:integer(cadia.bonusCycle,'Номер высадки');
+ const cycle=checkSum(previous,1,'Номер высадки'),actionPoints=8+(a.upgrades.includes('upgrade-1')?2:0);
+ cadia.bonusCycle=cycle;cadia.actionPoints=actionPoints;
+ log(state,id,'Высадка на Кадию',`Высадка ${cycle} · ${actionPoints} ОД${a.upgrades.includes('upgrade-1')?' · Десантный форсаж +2 ОД':''}`,'planet');
+ return {cycle,actionPoints};
+}
+export function outpostBonusStatus(state,id,recordId) {
+ const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');
+ if(r.bonusKnown===false)return {canClaim:false,label:'Бонус не указан',reason:'Бонус аванпоста не указан в источнике. Сначала уточните его у прайма.'};
+ const cadia=a.planets.cadia;
+ if(cadia.bonusCycle===undefined){
+  if(r.capturedCycle!==undefined)return {canClaim:false,label:'Со следующей высадки',reason:'Бонус станет доступен на следующей высадке на Кадию.'};
+  return r.claimed?{canClaim:false,label:'Бонус получен',reason:'Бонус уже начислен.'}:{canClaim:true,label:'Получить бонус',reason:''};
+ }
+ const cycle=integer(cadia.bonusCycle,'Номер высадки'),capturedCycle=integer(r.capturedCycle??0,'Высадка захвата'),lastBonusCycle=r.lastBonusCycle===undefined?undefined:integer(r.lastBonusCycle,'Высадка бонуса');
+ if(cycle<=capturedCycle)return {canClaim:false,label:'Со следующей высадки',reason:'Бонус станет доступен на следующей высадке на Кадию.'};
+ if(lastBonusCycle===cycle)return {canClaim:false,label:'Бонус этой высадки получен',reason:'Бонус уже начислен для текущей высадки.'};
+ return {canClaim:true,label:'Получить бонус',reason:''};
+}
 export function claimOutpostBonus(state,id,recordId) {
- const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');if(r.bonusKnown===false)throw Error('Бонус аванпоста не указан в источнике. Сначала уточните его у организатора.');if(r.claimed)throw Error('Бонус уже начислен.');const b=r.bonus;
+ const a=getAlliance(state,id),r=a.planets.cadia.outposts.find(r=>r.id===recordId);if(!r)throw Error('Аванпост не найден.');const status=outpostBonusStatus(state,id,recordId);if(!status.canClaim)throw Error(status.reason);const b=r.bonus;
  const caps=checkSum(a.caps,b.caps,'Баланс'),earned=checkSum(a.earnedCaps,b.caps,'Заработано'),xp=checkSum(a.xp,b.xp,'Опыт'),ap=checkSum(a.planets.cadia.actionPoints,b.actionPoints,'ОД'),qty=b.toolId?checkSum(a.inventory[b.toolId]||0,b.quantity,'Инструменты'):0;
- a.caps=caps;a.earnedCaps=earned;a.xp=xp;a.planets.cadia.actionPoints=ap;if(b.toolId)a.inventory[b.toolId]=qty;r.claimed=true;
+ a.caps=caps;a.earnedCaps=earned;a.xp=xp;a.planets.cadia.actionPoints=ap;if(b.toolId)a.inventory[b.toolId]=qty;r.claimed=true;if(a.planets.cadia.bonusCycle!==undefined)r.lastBonusCycle=a.planets.cadia.bonusCycle;
  log(state,id,`Бонус аванпоста «${r.name}»`,`+${b.caps} крышечек · +${b.xp} опыта · +${b.actionPoints} ОД${b.toolId?` · ${getItem(state,b.toolId).name} ×${b.quantity}`:''}`,'reward');
 }
 export function removePlanetRecord(state,id,planet,recordId) {
@@ -114,7 +136,7 @@ function validateAcquisition(state,a,item) {if(item.kind==='graviton')checkSum(a
 function acquire(a,item) {if(item.kind==='graviton')a.interface.gravitons++;else if(item.category==='upgrades')a.upgrades.push(item.id);else if(item.category==='access')a.access.push(item.id);else a.inventory[item.id]=(a.inventory[item.id]||0)+1;}
 export function purchase(state,allianceId,itemId) {
  const a=getAlliance(state,allianceId),item=getItem(state,itemId);if(!item)throw Error('Товар не найден.');validateAcquisition(state,a,item);if(item.price===null||item.price===undefined)throw Error('Сначала укажите цену товара.');const price=integer(item.price,'Цена');if(a.caps<price)throw Error('Недостаточно крышечек.');if(item.category==='tools'||item.category==='equipment')checkSum(a.inventory[item.id]||0,1,'Количество предметов');
- if(item.kind==='graviton'&&(a.interface.gravitonsPurchased??0)>=10)throw Error('Максимум — 10 покупок гравитонов за смену.');
+ if(item.kind==='graviton'&&(a.interface.gravitonsPurchased??0)>=10)throw Error('Максимум — 10 покупок гравитонов за путешествие.');
  a.caps-=price;acquire(a,item);if(item.kind==='graviton')a.interface.gravitonsPurchased=(a.interface.gravitonsPurchased??0)+1;log(state,allianceId,`Покупка: ${item.name}`,`−${price} крышечек`,'purchase');
 }
 export function craft(state,allianceId,itemId,ingredients) {
@@ -134,7 +156,7 @@ export function craft(state,allianceId,itemId,ingredients) {
 }
 export function removeInventory(state,id,itemId,quantity,reason) {const a=getAlliance(state,id),item=getItem(state,itemId),n=integer(quantity,'Количество',1,999),why=text(reason,'Причина',160);if(!item||!['tools','equipment'].includes(item.category)||owned(state,a,item)<n)throw Error('Недостаточно предметов.');a.inventory[itemId]-=n;if(!a.inventory[itemId])delete a.inventory[itemId];log(state,id,`Списано: ${item.name}`,`${n} шт. · ${why}`,'inventory');}
 export function updateSettings(state,values) {
- const name=text(values.name,'Название смены',80),duration=integer(values.duration,'Длительность',1,365),day=integer(values.day,'Сол',1,duration);
+ const name=text(values.name,'Название путешествия',80),duration=integer(values.duration,'Длительность',1,365),day=integer(values.day,'Сол',1,duration);
  const thresholds=String(values.levelThresholds).split(/[,;\s]+/).filter(Boolean).map(n=>integer(n,'Порог опыта'));if(!thresholds.length||thresholds[0]!==0||thresholds.length>100||thresholds.some((n,i)=>i>0&&n<=thresholds[i-1]))throw Error('Пороги должны начинаться с 0 и строго возрастать.');
  if(day!==state.shift.day)state.alliances.forEach(a=>a.access=[]);
  state.shift={name,day,duration};state.rules={levelThresholds:thresholds,consumeIngredients:true,craftCostsCaps:values.craftCostsCaps===true||values.craftCostsCaps==='on'};
@@ -160,10 +182,13 @@ export function validateState(d) {
   if(a.sourceNotes!==undefined&&(!a.sourceNotes||typeof a.sourceNotes!=='object'||Array.isArray(a.sourceNotes)||Object.entries(a.sourceNotes).some(([key,value])=>!['level','cadia','fenris','cronus','missing'].includes(key)||!str(value))))return false;
   if(!a.inventory||typeof a.inventory!=='object'||Array.isArray(a.inventory)||Object.entries(a.inventory).some(([id,n])=>!ids.has(id)||!['equipment','tools'].includes(getItem(d,id).category)||!isInt(n)||!n)||!Array.isArray(a.upgrades)||!Array.isArray(a.access)||a.upgrades.some(id=>getItem(d,id)?.category!=='upgrades')||a.access.some(id=>getItem(d,id)?.category!=='access'))return false;
   if(!Array.isArray(a.children)||!unique(a.children)||a.children.some(c=>!validId(c.id)||!str(c.name,60)||!roles.some(r=>r.id===c.role)||!isInt(c.xp)))return false;
-  const p=a.planets;if(!p||!isInt(p.cadia?.actionPoints))return false;
+  const p=a.planets;if(!p||!isInt(p.cadia?.actionPoints)||(p.cadia.bonusCycle!==undefined&&!isInt(p.cadia.bonusCycle)))return false;
   for(const [planet,key] of [['cadia','outposts'],['fenris','territories'],['cronus','shuttles']]){
    const rows=p[planet]?.[key];if(!Array.isArray(rows)||!unique(rows))return false;
-   for(const r of rows){if(!validId(r.id)||!str(r.name,80))return false;if(planet==='cadia'){const b=r.bonus;if(!b||!isInt(b.caps)||!isInt(b.xp)||!isInt(b.actionPoints)||!isInt(b.quantity,999)||typeof r.claimed!=='boolean'||!optionalBoolean(r.bonusKnown)||!(b.toolId===null||getItem(d,b.toolId)?.category==='tools')||(b.toolId&&!b.quantity))return false;}else if(!str(r.note,300))return false;}
+   for(const r of rows){if(!validId(r.id)||!str(r.name,80))return false;if(planet==='cadia'){const b=r.bonus;if(!b||!isInt(b.caps)||!isInt(b.xp)||!isInt(b.actionPoints)||!isInt(b.quantity,999)||typeof r.claimed!=='boolean'||!optionalBoolean(r.bonusKnown)||!(b.toolId===null||getItem(d,b.toolId)?.category==='tools')||(b.toolId&&!b.quantity))return false;
+    if((r.capturedCycle!==undefined&&!isInt(r.capturedCycle))||(r.lastBonusCycle!==undefined&&!isInt(r.lastBonusCycle)))return false;
+    if(p.cadia.bonusCycle===undefined){if((r.capturedCycle!==undefined&&r.capturedCycle!==0)||r.lastBonusCycle!==undefined)return false;}else if((r.capturedCycle??0)>p.cadia.bonusCycle||(r.lastBonusCycle!==undefined&&(r.lastBonusCycle>p.cadia.bonusCycle||r.lastBonusCycle<=(r.capturedCycle??0))))return false;
+   }else if(!str(r.note,300))return false;}
   }
  }
  if(d.events.some(e=>!validId(e.id)||!d.alliances.some(a=>a.id===e.allianceId)||!str(e.title)||!str(e.detail)||!str(e.kind,30)||!isInt(e.sol,365)||!Number.isFinite(Date.parse(e.time))))return false;

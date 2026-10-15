@@ -74,7 +74,7 @@ test('six-sheet import joins normalized names, preserves levels and creates no d
  assert.equal(report.summary.recipesChecked, 99);
  assert.equal(report.summary.catalogEntries, 110);
  assert.equal(report.defaults.find(entry => entry.field === 'shift.duration').value, 11);
- assert.match(report.defaults.find(entry => entry.field === 'shift.duration').reason, /уточнению организатора/);
+ assert.match(report.defaults.find(entry => entry.field === 'shift.duration').reason, /уточнению прайма/);
 });
 
 test('unknown capacity stays unknown and larger graviton totals are not clamped', () => {
@@ -145,6 +145,23 @@ test('all supplied catalog entries are matched by category and preserve source e
  assert.ok(report.catalog.recipeReview.some(entry => entry.id === 'tool-20' && /Форпост/.test(entry.issue)));
  assert.ok(report.catalog.sourceItems.some(entry => entry.id === 'tool-30'));
  assert.ok(report.catalog.sourceItems.some(entry => entry.id === 'upgrade-17'));
+});
+
+test('imported legacy wording is canonicalized without replacing source prices or authored effects', () => {
+ const workbook = fixture();
+ const first = inputSheet(workbook, 'Прокачка').rows.find(entry => entry.cells[`A${entry.row}`]?.value === 'Десантный форсаж');
+ const graviton = inputSheet(workbook, 'Прокачка').rows.find(entry => entry.cells[`A${entry.row}`]?.value === 'Гравитон');
+ const nano = inputSheet(workbook, 'Эквип').rows.find(entry => entry.cells[`A${entry.row}`]?.value === 'Нановолна');
+ first.cells[`B${first.row}`].value = '375 крышек';first.cells[`C${first.row}`].value = '2 ОД на высадку';
+ graviton.cells[`C${graviton.row}`].value = '1 гравитон (максимум 10)';nano.cells[`B${nano.row}`].value = 'Мгновенная зарядка рюкзака + 50 к заряду навсегда';
+ const { state, report } = convertGenesisWorkbook(workbook, { now: NOW });
+ assert.equal(getItem(state, 'upgrade-1').price, 375);assert.equal(getItem(state, 'upgrade-1').effect, '+2 ОД на высадку');
+ assert.equal(getItem(state, 'upgrade-27').effect, '1 гравитон');assert.equal(getItem(state, 'equip-24').effect, 'Мгновенная зарядка модульного интерфейса + 50 к заряду навсегда');
+ assert.equal(state.itemOverrides['upgrade-1'].effect, undefined);assert.equal(report.catalog.normalizedEffects.length, 3);
+ nano.cells[`B${nano.row}`].value = 'Авторский эффект: +75 заряда';
+ const authored = convertGenesisWorkbook(workbook, { now: NOW });
+ assert.equal(getItem(authored.state, 'equip-24').effect, 'Авторский эффект: +75 заряда');assert.equal(authored.state.itemOverrides['equip-24'].effect, 'Авторский эффект: +75 заряда');
+ assert.equal(getItem(authored.state, 'upgrade-1').price, 375);
 });
 
 test('map-awarded levels remain additional when experience later crosses a threshold', () => {

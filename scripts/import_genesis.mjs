@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { catalog } from '../src/catalog.js';
+import { catalog, normalizeGenesisItem } from '../src/catalog.js';
 import { createAlliance, initialState, MAX_NUMBER, validateState } from '../src/model.js';
 
 const SOURCE = 'https://docs.google.com/spreadsheets/d/1nWc9ZuLXj-ak4ukKscmOM-_BzeJfBKQngirGgpalTEI/edit';
@@ -138,6 +138,7 @@ function importCatalog(sheets, state) {
  const expected = catalog.filter(item => ['access', 'upgrades', 'equipment', 'tools'].includes(item.category));
  const matched = new Map();
  const sourceItems = [];
+ const normalizedEffects = [];
  for (const sheet of ['Прокачка', 'Эквип', 'Доступ']) {
   const allowed = sheet === 'Прокачка' ? ['upgrades'] : sheet === 'Эквип' ? ['equipment', 'tools'] : ['access'];
   for (const row of dataRows(sheets, sheet)) {
@@ -152,7 +153,9 @@ function importCatalog(sheets, state) {
     const toolLevel = whole(cell(row, 'B', sheet), `${sheet}, B${row.number}: уровень инструмента`, { max: 999 });
     if (toolLevel !== item.toolLevel) { override.toolLevel = toolLevel; override.effect = `Уровень инструмента: ${toolLevel}`; }
    } else {
-    const effect = cell(row, sheet === 'Прокачка' ? 'C' : sheet === 'Доступ' ? 'A' : 'B', sheet);
+    const sourceEffect = cell(row, sheet === 'Прокачка' ? 'C' : sheet === 'Доступ' ? 'A' : 'B', sheet);
+    const effect = normalizeGenesisItem({ ...item, effect: sourceEffect }).effect;
+    if (effect !== sourceEffect) normalizedEffects.push({ id: item.id, sourceEffect, effect });
     if (effect !== item.effect) override.effect = effect;
    }
    if (sheet === 'Доступ' || sheet === 'Прокачка') {
@@ -174,8 +177,9 @@ function importCatalog(sheets, state) {
  return {
   counts: Object.fromEntries(['access', 'upgrades', 'equipment', 'tools'].map(category => [category, sourceItems.filter(item => item.category === category).length])),
   sourceItems,
+  normalizedEffects,
   missing: [],
-  recipeReview: expected.filter(item => item.recipeIssue || item.needsRecipeReview).map(item => ({ id: item.id, name: item.name, recipeText: matched.get(item.id).recipeText ?? item.recipeText, issue: item.recipeIssue || 'Исходный рецепт допускает неоднозначное прочтение; требуется подтверждение организатора.' })),
+  recipeReview: expected.filter(item => item.recipeIssue || item.needsRecipeReview).map(item => ({ id: item.id, name: item.name, recipeText: matched.get(item.id).recipeText ?? item.recipeText, issue: item.recipeIssue || 'Исходный рецепт допускает неоднозначное прочтение; требуется подтверждение прайма.' })),
  };
 }
 
@@ -221,7 +225,7 @@ export function convertGenesisWorkbook(workbook, { now } = {}) {
   const raw = { cadia: cell(sub, 'N', 'Подфункции', false), fenris: cell(sub, 'P', 'Подфункции', false), cronus: cell(sub, 'R', 'Подфункции', false) };
   alliance.sourceNotes = { level: sourceLevel };
   for (const [planet, value] of Object.entries(raw)) if (hasContent(value)) alliance.sourceNotes[planet] = value;
-  alliance.sourceNotes.missing = 'В таблице не указаны: исторически заработанные крышечки; участники; полный инвентарь, улучшения и полученные доступы; очки действий на Кадии.';
+  alliance.sourceNotes.missing = 'В таблице не указаны: исторически заработанные крышечки; искатели; полный инвентарь, улучшения и полученные устройства; очки действий на Кадии.';
   importPlanets(alliance, raw);
   if (itemKey(name) === 'гагарина' && /расщепитель\s*1(?:\D|$)/iu.test(sourceLevel)) {
    const splitter = catalog.find(item => item.category === 'upgrades' && item.name === 'Лазерный расщепитель I');
@@ -241,15 +245,15 @@ export function convertGenesisWorkbook(workbook, { now } = {}) {
   summary: { alliances: state.alliances.length, catalogEntries: catalogReport.sourceItems.length, recipesChecked: catalogReport.counts.upgrades + catalogReport.counts.equipment + catalogReport.counts.tools, importedUpgrades: allianceReport.reduce((sum, alliance) => sum + alliance.importedUpgrades.length, 0) },
   defaults: [
    { field: 'shift.day', value: 1, reason: 'Текущий сол в источнике не указан.' },
-   { field: 'shift.duration', value: 11, reason: 'По уточнению организатора: путешествие длится 11 солов.' },
-   { field: 'rules.levelThresholds', value: '0, 100, …, 9900', reason: 'По уточнению организатора: шаг уровня 100 опыта; находки +уровень учтены отдельным бонусом.' },
+   { field: 'shift.duration', value: 11, reason: 'По уточнению прайма: путешествие длится 11 солов.' },
+   { field: 'rules.levelThresholds', value: '0, 100, …, 9900', reason: 'По уточнению прайма: шаг уровня 100 опыта; находки +уровень учтены отдельным бонусом.' },
    { field: 'interface.gravitonsPurchased', value: 0, reason: 'Счётчик покупок ведётся с момента импорта; прошлое количество покупок неизвестно. Общего лимита гравитонов нет.' },
   ],
   unknown: [
    { field: 'interface.maxCharge', alliances: missingFor(alliance => !alliance.interface.maxChargeKnown), behavior: 'Сохранён только текущий заряд; maxCharge равен Math.max(1, charge) как техническое значение, ёмкость не считается известной.' },
    { field: 'interface.resilience', alliances: allNames, behavior: 'Неизвестно; внутреннее значение 0, resilienceKnown=false.' },
    { field: 'earnedCaps', alliances: allNames, behavior: 'Прошлые поступления неизвестны; 0 и earnedCapsKnown=false, новые награды считаются после импорта.' },
-   { field: 'inventory/upgrades/access/children', alliances: allNames, behavior: 'Полного списка владений и участников нет; массивы и инвентарь пусты, кроме явно указанного у Гагарина расщепителя I.' },
+   { field: 'inventory/upgrades/access/children', alliances: allNames, behavior: 'Полного списка владений и искателей нет; массивы и инвентарь пусты, кроме явно указанного у Гагарина расщепителя I.' },
    { field: 'interface.gravitonsPurchased', alliances: allNames, behavior: 'История покупок не указана; счётчик начинается с 0.' },
    { field: 'planets.cadia.actionPoints', alliances: allNames, behavior: 'В таблице есть ОД райдеров, но отдельные ОД Кадии не указаны; внутреннее значение 0.' },
   ],
