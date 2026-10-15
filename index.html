@@ -1196,7 +1196,7 @@ const unique=rows=>new Set(rows.map(r=>r.id)).size===rows.length;
 function validateState(d) {
  try {
  if(d?.version!==2||!str(d.shift?.name,80)||!isInt(d.shift.day,365)||!d.shift.day||!isInt(d.shift.duration,365)||d.shift.day>d.shift.duration||!Array.isArray(d.rules?.levelThresholds)||!d.rules.levelThresholds.length||d.rules.levelThresholds[0]!==0||d.rules.levelThresholds.some((n,i)=>!isInt(n)||(i>0&&n<=d.rules.levelThresholds[i-1]))||d.rules.consumeIngredients!==true||typeof d.rules.craftCostsCaps!=='boolean')return false;
- if(!Array.isArray(d.alliances)||!unique(d.alliances)||!Array.isArray(d.customItems)||!unique(d.customItems)||!Array.isArray(d.events)||!d.itemOverrides||typeof d.itemOverrides!=='object')return false;
+ if(!Array.isArray(d.alliances)||!unique(d.alliances)||!Array.isArray(d.customItems)||!unique(d.customItems)||!Array.isArray(d.events)||!unique(d.events)||!d.itemOverrides||typeof d.itemOverrides!=='object')return false;
  for(const item of d.customItems)if(!validId(item.id)||!Object.keys({access:1,upgrades:1,equipment:1,tools:1}).includes(item.category)||!str(item.name,100)||!str(item.effect)||!(item.price===null||isInt(item.price)))return false;
  const all=allItems(d),ids=new Set(all.map(i=>i.id));if(ids.size!==all.length)return false;
  for(const id of Object.keys(d.itemOverrides))if(!validId(id)||!ids.has(id))return false;

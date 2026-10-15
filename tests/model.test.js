@@ -17,6 +17,10 @@ test('invalid and unknown event IDs are atomic, and deleting the final event lea
  while(state.events.length)removeEvent(state,state.events[0].id);
  assert.deepEqual(state.events,[]);assert.ok(validateState(JSON.parse(JSON.stringify(state))));unchangedOnError(state,()=>removeEvent(state,'missing-event'),/не найдено/);
 });
+test('backups accept matching event titles but reject duplicate event IDs',()=>{
+ const {state}=setup();state.events[1].title=state.events[0].title;assert.notEqual(state.events[0].id,state.events[1].id);assert.ok(validateState(state));
+ const duplicate=JSON.parse(JSON.stringify(state));duplicate.events[1].id=duplicate.events[0].id;assert.equal(validateState(duplicate),false);
+});
 test('the full supplied catalog and demo state satisfy storage validation',()=>{
  assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));assert.equal(initialState().shift.duration,11);assert.equal(initialState(true).shift.duration,11);
  assert.equal(initialState(true).shift.name,'Генезис');const fresh=createAlliance('Новый альянс');assert.equal(fresh.interface.charge,200);assert.equal(fresh.interface.gravitons,1);assert.ok(fresh.interface.maxCharge>=fresh.interface.charge);
