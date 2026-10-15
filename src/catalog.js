@@ -119,6 +119,16 @@ const toolRows = [
 const recipe = value => value ? { type:'specific', variants:Array.isArray(value[0])?value:[value] } : null;
 export const catalog = [
  { id:'access-1', category:'access', name:'Звуковой анализатор', price:800, effect:'Составить свой плейлист на сол (согласование): по треку с искателя.', recipeText:'-', recipe:null },
+ { id:'access-2', category:'access', name:'Нано-телескоп', price:400, effect:'Провести квазар своему альянсу (согласование).', recipeText:'-', recipe:null },
+ { id:'access-3', category:'access', name:'Телепатический шлем', price:600, effect:'Стать помощником прайма на испытании (до 3).', recipeText:'-', recipe:null },
+ { id:'access-4', category:'access', name:'Галактический телескоп', price:900, effect:'Просмотр проекции.', recipeText:'-', recipe:null },
+ { id:'access-5', category:'access', name:'Сканер личности', price:500, effect:'Выбрать внешний вид спеца (по согласованию).', recipeText:'-', recipe:null },
+ { id:'access-6', category:'access', name:'Усовершенстованный жесткий диск', price:1000, effect:'Квазар от прайма (на весь альянс).', recipeText:'-', recipe:null },
+ { id:'access-7', category:'access', name:'Сверхточный компьютер', price:700, effect:'Узнать заранее подробности следующего испытания.', recipeText:'-', recipe:null },
+ { id:'access-8', category:'access', name:'Браслет маскировки', price:700, effect:'Сдача т.у на 20 мин позже.', recipeText:'-', recipe:null },
+ { id:'access-9', category:'access', name:'Дублирующие кольцо', price:500, effect:'Выбрать локацию и тему для квазара.', recipeText:'-', recipe:null },
+ { id:'access-10', category:'access', name:'Коммуникатор со звездами', price:700, effect:'Прогулка (до 7 искателей) с праймом или спецом.', recipeText:'-', recipe:null },
+ { id:'access-11', category:'access', name:'Пульт управления', price:800, effect:'Выбрать себе спеца или прайма на испытание.', recipeText:'-', recipe:null },
  ...upgradeRows.map(([name,price,effect,recipeText,ingredients],i)=>({id:`upgrade-${i+1}`,category:'upgrades',name,price,effect,recipeText,recipe:typeof ingredients==='number'?{type:'anyTools',count:2,minLevel:ingredients}:recipe(ingredients),repeatable:name==='Гравитон',kind:name==='Гравитон'?'graviton':'upgrade',needsRecipeReview:Array.isArray(ingredients?.[0])&&i!==16})),
  ...equipmentRows.map(([name,effect,recipeText,ingredients],i)=>({id:`equip-${i+1}`,category:'equipment',name,price:null,effect,recipeText,recipe:recipe(ingredients),needsRecipeReview:!!ingredients})),
  ...toolRows.map(([name,toolLevel,recipeText,ingredients,role],i)=>({id:`tool-${i+1}`,category:'tools',name,price:null,effect:`Уровень инструмента: ${toolLevel}`,toolLevel,role,recipeText,recipe:recipe(ingredients),needsRecipeReview:i===29,recipeIssue:i===19||i===24?'В рецепте указан «Форпост», но такого инструмента нет в списке. Выберите нужный ингредиент в настройках товара.':null})),

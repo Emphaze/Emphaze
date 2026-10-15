@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,validateState,allianceLevel,adjustResource,recordEventResults,updateInterface,addPlanetRecord,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
+import {initialState,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,adjustResource,recordEventResults,updateInterface,addPlanetRecord,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
 test('the full supplied catalog and demo state satisfy storage validation',()=>{
- assert.equal(catalog.filter(i=>i.category==='access').length,1);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));
+ assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));
 });
 test('caps balance and total earned are independent from experience',()=>{
  const {state,a}=setup(),xp=a.xp,balance=a.caps,earned=a.earnedCaps;
@@ -15,6 +15,14 @@ test('caps balance and total earned are independent from experience',()=>{
 });
 test('personal experience raises alliance XP and its calculated level',()=>{
  const {state,a}=setup();adjustResource(state,{allianceId:id,resource:'xp',childId:'child-1-1',amount:200,reason:'Открытие'});assert.equal(a.xp,2040);assert.equal(a.children[0].xp,420);assert.equal(allianceLevel(state,a),5);
+});
+test('map bonus levels raise the displayed level while XP progress follows experience thresholds',()=>{
+ const {state,a}=setup();state.rules.levelThresholds=Array.from({length:100},(_,i)=>i*100);a.xp=450;
+ assert.equal(allianceLevel(state,a),5);updateBonusLevels(state,id,{bonusLevels:2,reason:'Два уровня найдены на карте'});
+ assert.equal(a.xp,450);assert.deepEqual(xpProgress(state,a),{level:7,next:500,percent:50,remaining:50});assert.match(state.events[0].detail,/0 → 2/);
+ adjustResource(state,{allianceId:id,resource:'xp',amount:50,reason:'Награда за испытание'});assert.deepEqual(xpProgress(state,a),{level:8,next:600,percent:0,remaining:100});
+ unchangedOnError(state,()=>updateBonusLevels(state,id,{bonusLevels:-1,reason:'Ошибка'}));unchangedOnError(state,()=>updateBonusLevels(state,id,{bonusLevels:3,reason:' '}));
+ a.xp=9900;assert.deepEqual(xpProgress(state,a),{level:102,next:undefined,percent:100,remaining:0});assert.ok(validateState(state));
 });
 test('raider action points and subfunction reputation remain separate',()=>{
  const {state,a}=setup(),rep=a.functions.engineers;adjustResource(state,{allianceId:id,resource:'raiders',amount:2,reason:'Победа'});assert.equal(a.functions.raiders,8);assert.equal(a.functions.engineers,rep);
@@ -35,9 +43,28 @@ test('outpost rewards include caps, XP, planetary action points and tools once',
 test('planet records remain independent for each planet and alliance',()=>{
  const {state,a}=setup(),before=a.planets.fenris.territories.length;addPlanetRecord(state,id,'fenris',{name:'Сектор 99',note:'Найден лёд'});addPlanetRecord(state,id,'cronus',{name:'«Комета»',note:'На орбите'});assert.equal(a.planets.fenris.territories.length,before+1);assert.equal(a.planets.cronus.shuttles.length,2);assert.equal(state.alliances[1].planets.cronus.shuttles.length,1);
 });
-test('interface constraints and ten-graviton cap are enforced without partial writes',()=>{
+test('interface charge constraints remain atomic and graviton mass has no ten-unit cap',()=>{
  const {state,a}=setup();unchangedOnError(state,()=>updateInterface(state,id,{name:'Новый',charge:101,maxCharge:100,gravitons:4,resilience:20}));
- updateInterface(state,id,{name:'Астра',charge:90,maxCharge:150,gravitons:9,resilience:40});purchase(state,id,'upgrade-27');assert.equal(a.interface.gravitons,10);unchangedOnError(state,()=>purchase(state,id,'upgrade-27'),/Максимум/);
+ updateInterface(state,id,{name:'Астра',charge:90,maxCharge:150,gravitons:52,gravitonsPurchased:10,resilience:40});assert.equal(a.interface.gravitons,52);assert.ok(validateState(state));
+ unchangedOnError(state,()=>updateInterface(state,id,{name:'Астра',charge:90,maxCharge:150,gravitons:52,gravitonsPurchased:11,resilience:40}));
+ updateInterface(state,id,{name:'Астра',charge:100,maxCharge:150,gravitons:53,resilience:45});assert.equal(a.interface.gravitonsPurchased,10);assert.equal(a.interface.maxChargeKnown,true);assert.equal(a.interface.resilienceKnown,true);
+});
+test('only graviton purchases count toward ten per shift and manual grants remain possible',()=>{
+ const {state,a}=setup();a.interface.gravitons=42;const balance=a.caps;
+ for(let i=0;i<10;i++)purchase(state,id,'upgrade-27');
+ assert.equal(a.interface.gravitons,52);assert.equal(a.interface.gravitonsPurchased,10);assert.equal(a.caps,balance-2000);
+ unchangedOnError(state,()=>purchase(state,id,'upgrade-27'),/10 покупок/);
+ grantItem(state,id,'upgrade-27',3,'Найдены на карте');assert.equal(a.interface.gravitons,55);assert.equal(a.interface.gravitonsPurchased,10);
+ const settings={name:'Та же смена',day:8,duration:21,levelThresholds:state.rules.levelThresholds.join(','),craftCostsCaps:false};updateSettings(state,settings);assert.equal(a.interface.gravitonsPurchased,10);
+ a.interface.gravitons=MAX_NUMBER;unchangedOnError(state,()=>grantItem(state,id,'upgrade-27',1,'За границей допустимого числа'));assert.ok(validateState(state));
+});
+test('unknown interface capacity expands only its placeholder until an organizer supplies actual values',()=>{
+ const {state,a}=setup();updateInterface(state,id,{name:'Импорт',charge:150,maxCharge:100,maxChargeKnown:false,gravitons:52,resilience:0,resilienceKnown:false});
+ assert.equal(a.interface.maxCharge,150);assert.equal(a.interface.maxChargeKnown,false);assert.equal(a.interface.resilienceKnown,false);assert.equal(a.interface.gravitonsPurchased,0);
+ adjustResource(state,{allianceId:id,resource:'charge',amount:20,reason:'Подзарядка'});assert.equal(a.interface.charge,170);assert.equal(a.interface.maxCharge,170);assert.equal(a.interface.maxChargeKnown,false);assert.ok(validateState(state));
+ unchangedOnError(state,()=>updateInterface(state,id,{name:'Импорт',charge:170,maxCharge:100,maxChargeKnown:true,gravitons:52,resilience:0}));
+ updateInterface(state,id,{name:'Проверен',charge:170,maxCharge:200,gravitons:52,resilience:60});assert.equal(a.interface.maxChargeKnown,true);assert.equal(a.interface.resilienceKnown,true);
+ unchangedOnError(state,()=>adjustResource(state,{allianceId:id,resource:'charge',amount:31,reason:'Слишком много'}));
 });
 test('insufficient currency, unknown prices and duplicate upgrades do not mutate state',()=>{
  const {state,a}=setup();unchangedOnError(state,()=>purchase(state,id,'equip-1'),/цену/);a.caps=100;unchangedOnError(state,()=>purchase(state,id,'upgrade-1'),/Недостаточно/);a.caps=1000;purchase(state,id,'upgrade-1');unchangedOnError(state,()=>purchase(state,id,'upgrade-1'),/уже установлено/);
@@ -69,4 +96,18 @@ test('level thresholds can change, invalid thresholds cannot mutate settings, an
 test('backups reject invalid currencies, unknown ingredients, duplicate IDs and charge overflow',()=>{
  const {state}=setup();const cases=[s=>s.alliances[0].caps=-1,s=>s.alliances[0].interface.charge=101,s=>s.alliances[1].id=s.alliances[0].id,s=>s.alliances[0].inventory['missing']=2,s=>s.itemOverrides['upgrade-1']={recipe:{type:'specific',variants:[['missing']]}}];
  for(const mutate of cases){const copy=structuredClone(state);mutate(copy);assert.equal(validateState(copy),false);}assert.equal(validateState({version:1}),false);
+});
+test('import uncertainty flags and source notes validate without allowing invented outpost rewards',()=>{
+ const {state,a}=setup();a.bonusLevels=2;a.earnedCapsKnown=false;a.sourceNotes={level:'Ещё два уровня с карты',cadia:'Бонусы не указаны',fenris:'Исследовано 3 территории',cronus:'Данные из исходной таблицы',missing:'Ёмкость и стойкость не заполнены'};
+ a.interface.gravitons=52;a.interface.gravitonsPurchased=10;a.interface.maxChargeKnown=false;a.interface.resilienceKnown=false;const record=a.planets.cadia.outposts[0];record.bonusKnown=false;
+ assert.ok(validateState(state));unchangedOnError(state,()=>claimOutpostBonus(state,id,record.id),/Бонус аванпоста не указан/);
+ const cases=[
+  s=>s.alliances[0].bonusLevels=-1,s=>s.alliances[0].bonusLevels=1.5,s=>s.alliances[0].bonusLevels=MAX_NUMBER+1,
+  s=>s.alliances[0].earnedCapsKnown='false',s=>s.alliances[0].interface.maxChargeKnown=0,s=>s.alliances[0].interface.resilienceKnown=null,
+  s=>s.alliances[0].interface.gravitonsPurchased=11,s=>s.alliances[0].interface.gravitonsPurchased=-1,s=>s.alliances[0].interface.gravitonsPurchased=0.5,
+  s=>s.alliances[0].sourceNotes={missing:'x'.repeat(2001)},s=>s.alliances[0].sourceNotes={level:2},s=>s.alliances[0].sourceNotes=[],s=>s.alliances[0].sourceNotes=null,
+  s=>s.alliances[0].planets.cadia.outposts[0].bonusKnown='false',s=>s.alliances[0].interface.charge=s.alliances[0].interface.maxCharge+1,
+ ];
+ for(const mutate of cases){const copy=structuredClone(state);mutate(copy);assert.equal(validateState(copy),false);}
+ record.bonusKnown=true;claimOutpostBonus(state,id,record.id);assert.equal(record.claimed,true);assert.ok(validateState(state));
 });

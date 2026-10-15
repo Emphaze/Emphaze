@@ -115,6 +115,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     assert page.locator('.form-error').inner_text()
     page.locator('[name=maxCharge]').fill('200')
     page.locator('[name=gravitons]').fill('9')
+    page.locator('[name=gravitonsPurchased]').fill('9')
     submit()
     assert first_alliance()['interface']['charge'] == 150
     assert first_alliance()['interface']['maxCharge'] == 200
@@ -136,6 +137,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     item_action('item','upgrade-27')
     submit()
     assert first_alliance()['interface']['gravitons'] == 10
+    assert first_alliance()['interface']['gravitonsPurchased'] == 10
     item_action('item','upgrade-27')
     submit(False)
     assert 'Максимум' in page.locator('.form-error').inner_text()
