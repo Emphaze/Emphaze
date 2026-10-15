@@ -1,10 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,setAllianceLevel,resetAllProgress,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
+import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,setAllianceLevel,resetAllProgress,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,removeEvent,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
+test('deleting one event uses its ID even with matching titles and never reverses recorded progress',()=>{
+ const {state}=setup();recordEventResults(state,{name:'Одинаковое событие',results:[{allianceId:id,place:1,caps:100,xp:50}]});
+ recordEventResults(state,{name:'Одинаковое событие',results:[{allianceId:id,place:2,caps:50,xp:25}]});
+ const removedId=state.events[1].id,retainedId=state.events[0].id,before=structuredClone(state);
+ assert.notEqual(removedId,retainedId);assert.equal(state.events[0].title,state.events[1].title);assert.equal(removeEvent(state,removedId),true);
+ before.events.splice(1,1);assert.deepEqual(state,before);assert.ok(state.events.some(event=>event.id===retainedId));assert.ok(validateState(state));
+});
+test('invalid and unknown event IDs are atomic, and deleting the final event leaves a valid empty history',()=>{
+ const {state}=setup();for(const eventId of ['missing-event','',null,undefined,42,'contains spaces','__proto__'])unchangedOnError(state,()=>removeEvent(state,eventId));
+ while(state.events.length)removeEvent(state,state.events[0].id);
+ assert.deepEqual(state.events,[]);assert.ok(validateState(JSON.parse(JSON.stringify(state))));unchangedOnError(state,()=>removeEvent(state,'missing-event'),/не найдено/);
+});
 test('the full supplied catalog and demo state satisfy storage validation',()=>{
  assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));assert.equal(initialState().shift.duration,11);assert.equal(initialState(true).shift.duration,11);
  assert.equal(initialState(true).shift.name,'Генезис');const fresh=createAlliance('Новый альянс');assert.equal(fresh.interface.charge,200);assert.equal(fresh.interface.gravitons,1);assert.ok(fresh.interface.maxCharge>=fresh.interface.charge);

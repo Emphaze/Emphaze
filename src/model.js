@@ -72,6 +72,11 @@ export function initialState(empty=false) {
 }
 export function getAlliance(state,id) {const a=state.alliances.find(a=>a.id===id);if(!a)throw Error('Альянс не найден.');return a;}
 export function log(state,allianceId,title,detail='',kind='update') {state.events.unshift({id:uid(),allianceId,title,detail,kind,time:new Date().toISOString(),sol:state.shift.day});}
+export function removeEvent(state,eventId) {
+ if(!validId(eventId))throw Error('Некорректный идентификатор события.');
+ const index=state.events.findIndex(event=>event.id===eventId);if(index<0)throw Error('Событие не найдено.');
+ state.events.splice(index,1);return true;
+}
 function checkSum(value,delta,label) {return integer(value+delta,label);}
 function resourceTarget(state,{allianceId,resource,childId}) {
  const a=getAlliance(state,allianceId),group=roles.some(role=>role.id===resource);

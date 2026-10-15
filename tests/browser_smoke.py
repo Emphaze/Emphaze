@@ -153,6 +153,20 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     submit()
     assert first_alliance()['caps'] == 2830
     assert first_alliance()['earnedCaps'] == 3630
+    # Removing a history entry deletes only that entry; cancel leaves it intact.
+    history_before = snapshot()
+    selected_event = history_before['events'][0]
+    selected_row = page.locator(f'.event-row[data-event-id="{selected_event["id"]}"]')
+    selected_row.locator('[data-action=removeEvent]').click()
+    page.get_by_role('button',name='Отмена',exact=True).click()
+    assert snapshot() == history_before
+    selected_row.locator('[data-action=removeEvent]').click()
+    submit()
+    expected_history = {**history_before,'events':[e for e in history_before['events'] if e['id'] != selected_event['id']]}
+    assert snapshot() == expected_history
+    assert selected_row.count() == 0
+    page.reload(); page.wait_for_selector('.access-banner.admin'); go('history')
+    assert page.locator(f'.event-row[data-event-id="{selected_event["id"]}"]').count() == 0
     # New captures pay from the following landing, once per landing.
     go('planets')
     page.locator('[data-action=addPlanet]').click()
@@ -345,6 +359,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         mobile.get_by_role('button',name='Открыть меню').click()
         mobile.locator(f'nav [data-page="{target}"]').click()
         if target == 'alliances': assert mobile.locator('[data-action=editMetric],.metric-form').count() == 0
+        if target == 'history': assert mobile.locator('[data-action=removeEvent]').count() == 0
         assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth'),target
     page.get_by_role('button',name='Выйти',exact=True).click()
     page.get_by_role('button',name='Вход прайма',exact=True).wait_for()

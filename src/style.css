@@ -636,3 +636,5 @@ dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding:
 .metric-actions .button { padding: 9px 10px; font-size: 12px; }
 .metric-form .form-error:empty { display: none; }
 .metric-form .form-error { font-size: 12px; margin: 8px 0; }
+.event-delete { margin-left: auto; flex-shrink: 0; }
+.event-delete:hover { color: #e5b2b2; background: #382c35; }

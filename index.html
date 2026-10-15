@@ -749,6 +749,8 @@ dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding:
 .metric-actions .button { padding: 9px 10px; font-size: 12px; }
 .metric-form .form-error:empty { display: none; }
 .metric-form .form-error { font-size: 12px; margin: 8px 0; }
+.event-delete { margin-left: auto; flex-shrink: 0; }
+.event-delete:hover { color: #e5b2b2; background: #382c35; }
 
   </style>
 </head>
@@ -1040,6 +1042,11 @@ function initialState(empty=false) {
 }
 function getAlliance(state,id) {const a=state.alliances.find(a=>a.id===id);if(!a)throw Error('Альянс не найден.');return a;}
 function log(state,allianceId,title,detail='',kind='update') {state.events.unshift({id:uid(),allianceId,title,detail,kind,time:new Date().toISOString(),sol:state.shift.day});}
+function removeEvent(state,eventId) {
+ if(!validId(eventId))throw Error('Некорректный идентификатор события.');
+ const index=state.events.findIndex(event=>event.id===eventId);if(index<0)throw Error('Событие не найдено.');
+ state.events.splice(index,1);return true;
+}
 function checkSum(value,delta,label) {return integer(value+delta,label);}
 function resourceTarget(state,{allianceId,resource,childId}) {
  const a=getAlliance(state,allianceId),group=roles.some(role=>role.id===resource);
@@ -1317,7 +1324,7 @@ function allianceCard(a){
   <div class="role-strip">${roles.map(r=>`<span title="${r.name}: ${a.functions[r.id]} ${r.id==='raiders'?'ОД':'репутации'}"><span class="role-mini ${r.color}">${icon(r.icon)}</span><small class="role-name">${r.name}</small><strong>${a.functions[r.id]} <em>${r.id==='raiders'?'ОД':'реп.'}</em></strong></span>`).join('')}</div>
  </button>`;
 }
-function eventRow(e){const a=state.alliances.find(a=>a.id===e.allianceId);const i={reward:'coin',purchase:'box',craft:'wrench',planet:'orbit',interface:'bolt',event:'trophy',inventory:'box',update:'edit'}[e.kind]||'spark';return `<div class="event-row"><span class="event-icon ${a?.color||'blue'}">${icon(i)}</span><div><strong>${esc(e.title)}</strong><p>${esc(e.detail)}</p><small>${esc(a?.name||'Альянс')} · Сол ${e.sol} · ${new Date(e.time).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div></div>`;}
+function eventRow(e){const a=state.alliances.find(a=>a.id===e.allianceId);const i={reward:'coin',purchase:'box',craft:'wrench',planet:'orbit',interface:'bolt',event:'trophy',inventory:'box',update:'edit'}[e.kind]||'spark';return `<div class="event-row" data-event-id="${e.id}"><span class="event-icon ${a?.color||'blue'}">${icon(i)}</span><div><strong>${esc(e.title)}</strong><p>${esc(e.detail)}</p><small>${esc(a?.name||'Альянс')} · Сол ${e.sol} · ${new Date(e.time).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div>${isAdmin()?`<button class="icon-button event-delete" data-action="removeEvent" data-id="${e.id}" aria-label="Удалить событие: ${esc(e.title)}" title="Удалить событие">${icon('trash')}</button>`:''}</div>`;}
 function searchBox(placeholder){return `<label class="search">${icon('search')}<input id="search" type="search" placeholder="${placeholder}" aria-label="Поиск" value="${esc(search)}"></label>`;}
 function alliancesPage(){const a=active();return `<div class="toolbar">${searchBox('Найти альянс или искателя…')}${button(`${icon('plus')} Новый альянс`,'addAlliance')}</div><div class="alliance-tabs">${state.alliances.filter(a=>match(a.name)||a.children.some(c=>match(c.name))).map(a=>`<button class="alliance-tab ${a.id===activeId?'selected':''}" data-action="activate" data-id="${a.id}"><span class="emblem mini ${a.color}">${emblem(a.color)}</span>${esc(a.name)}<span>УР. ${allianceLevel(state,a)}</span></button>`).join('')||'<p class="panel-note">Ничего не найдено</p>'}</div>${a?allianceDetail(a):empty('Ваши альянсы скоро выйдут на связь','Создайте первую команду.',button('Новый альянс','addAlliance'))}`;}
 function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} искателей`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange',{allianceId:a.id,resource:'caps'})}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple',{allianceId:a.id,resource:'xp'})}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue',{allianceId:a.id,resource:'level'})}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div><div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}" title="${esc(r.description)}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('edit')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Искатель</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Изменить личный опыт: ${esc(c.name)}">${icon('spark')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список искателей пока не заполнен.':'Добавьте искателей вашей команды.'}</p>`}<p class="fine-note">Личный опыт также меняет общий опыт альянса на ту же разницу.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
@@ -1451,6 +1458,11 @@ async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmi
  if(action==='activate'){activeId=id;render();}
  if(action==='addChild')childModal();
  if(action==='editChild')childModal(id);
+ if(action==='removeEvent'){
+  const event=state.events.find(e=>e.id===id);if(!event)throw Error('Событие не найдено.');
+  const alliance=state.alliances.find(a=>a.id===event.allianceId);
+  modal('Удалить запись из хроники?',`${intro(`«${esc(event.title)}» · ${esc(alliance?.name||'Альянс')} · Сол ${event.sol}`)}${intro('Будет удалена только запись. Начисленные крышечки, опыт и другие показатели сохранятся.')}<form data-form="removeEvent" data-id="${id}"><div class="backup-actions">${button('Отмена','close','secondary','type="button"')}</div>${submit('Удалить запись')}</form>`);
+ }
  if(action==='eventResults')eventModal();
  if(action==='fillEventRewards'){
   const form=b.closest('form');let filled=0;
@@ -1497,6 +1509,7 @@ document.addEventListener('change',async e=>{
 });
 function processForm(kind,data,form){
  const a=active();
+ if(kind==='removeEvent')removeEvent(state,form.dataset.id);
  if(kind==='metric'){
   const options={value:data.value,reason:'Изменение в карточке альянса'};
   if(form.dataset.resource==='level')setAllianceLevel(state,form.dataset.id,{level:data.value,reason:options.reason});
@@ -1536,7 +1549,7 @@ document.addEventListener('submit',async e=>{
  const submitButton=form.querySelector('.submit');submitButton.disabled=true;
  try{
   if(kind==='login'){const result=await api('/api/login',{method:'POST',body:JSON.stringify({password:data.password})});auth={...result,configured:true};await refreshRemote(true);render();toast('Вы вошли как прайм.');return;}
-  await mutate(()=>processForm(kind,data,form));if(kind==='metric')editingMetric=null;render();toast(kind==='craft'?'Крафт завершён. Ингредиенты израсходованы.':kind==='purchase'?'Покупка завершена. Крышечки списаны.':kind==='eventResults'?'Награды начислены всем выбранным альянсам.':'Изменения сохранены для всех зрителей.');
+  await mutate(()=>processForm(kind,data,form));if(kind==='metric')editingMetric=null;render();toast(kind==='removeEvent'?'Запись удалена из хроники.':kind==='craft'?'Крафт завершён. Ингредиенты израсходованы.':kind==='purchase'?'Покупка завершена. Крышечки списаны.':kind==='eventResults'?'Награды начислены всем выбранным альянсам.':'Изменения сохранены для всех зрителей.');
  }catch(err){form.querySelector('.form-error').textContent=err.message;if(!form.isConnected)toast(err.message,true);}finally{submitButton.disabled=false;}
 });
 window.addEventListener('hashchange',()=>{if(location.hash==='#overview')navigate('overview');});
