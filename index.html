@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10131f">
-  <meta name="description" content="Орбита — прогресс альянсов в космической лагерной смене.">
-  <title>Орбита · Космическая одиссея</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23232b40'/%3E%3Ccircle cx='20' cy='20' r='8' fill='%23b2c3eb'/%3E%3Cellipse cx='20' cy='20' rx='17' ry='5' transform='rotate(-30 20 20)' fill='none' stroke='%23b2c3eb' stroke-width='2'/%3E%3C/svg%3E">
+  <meta name="description" content="Космический корабль Генезис — прогресс альянсов, ресурсы и исследования лагерной смены.">
+  <title>Космический корабль Генезис</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2210%22%20fill%3D%22%23171e2b%22%2F%3E%3Cg%20transform%3D%22translate%288%208%29%22%20fill%3D%22none%22%20stroke%3D%22%23b8c9e9%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%204c3-2%207-1%207-1s1%204-1%207l-6%207-7-7ZM7%2010%203%2011v6l4-1m7%201-1%204h6l1-4M7%2018l-3%203m1-5-3%203m6%201-3%203%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
   <!-- Bundled Golos Text font license:
 Copyright 2019 The Golos Text Project Authors (https://github.com/googlefonts/golos-text)
 
@@ -131,6 +131,574 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 /* Readable progression */
 .track{height:6px}.xp-label{font-size:10px;line-height:1.6}.event-row small,.stat p{color:#909db7;font-size:10px}.item-effect{font-size:12px}.recipe-preview p{font-size:11px;line-height:1.7}.recipe-preview>span{font-size:9px}.catalog-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}.auth-button{font-size:10px;min-height:38px}
 @media(max-width:450px){.topbar .breadcrumb{display:none}.topbar{padding-left:12px;padding-right:12px;gap:8px}.icon-button.mobile-menu{width:38px;height:38px}.auth-button{font-size:10px;padding:9px 8px}.top-actions{gap:6px}}
+
+/* Genesis: clear progress, quiet surfaces, readable controls. */
+:root {
+  color: #e5ebf4;
+  background: #111722;
+  font-size: 14px;
+  --muted: #a0aec2;
+  --border: #334052;
+  --panel: #1a2330;
+  --blue: #a8c2e8;
+  --purple: #c0aedc;
+  --orange: #d7b48d;
+  --green: #acd0bc;
+  --pink: #d4adc4;
+}
+body { line-height: 1.5; }
+button { transition: none; }
+button:hover,
+.alliance-card:hover,
+.planet-overview:hover,
+.item-card:hover { transform: none; box-shadow: none; }
+button:focus-visible,
+a:focus-visible { outline-color: #bdcfea; }
+
+.sidebar {
+  width: 244px;
+  padding: 28px 18px;
+  background: #151d29;
+  border-color: var(--border);
+  overflow-y: auto;
+  transition: none;
+}
+.brand {
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+.brand .brand-mark {
+  width: 34px;
+  height: 40px;
+  border-radius: 8px;
+  background: #232f40;
+  border-color: #40516a;
+  color: #c6d4e8;
+  flex-shrink: 0;
+}
+.brand .brand-mark .icon { width: 22px; height: 22px; }
+.brand .brand-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+.brand .brand-copy > span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #b1bfd1;
+}
+.brand .brand-copy > strong {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -.35px;
+}
+.shift-switcher {
+  min-height: 58px;
+  margin-top: 26px;
+  padding: 11px;
+  background: #1d2837;
+  border-color: #3b4a60;
+}
+.shift-switcher strong { font-size: 13px; }
+.shift-switcher small { font-size: 12px; color: var(--muted); }
+.shift-symbol { background: #2a3749; color: #bccce3; }
+.nav-label {
+  font-size: 12px;
+  letter-spacing: .7px;
+  color: #a0aec2;
+  margin: 28px 0 12px 10px;
+}
+nav { gap: 6px; }
+.sidebar nav { margin-top: 24px; }
+.nav-item {
+  min-height: 44px;
+  padding: 11px;
+  font-size: 13px;
+  color: #b4c1d3;
+}
+.nav-item.active {
+  background: #2a384b;
+  border-color: #4b607b;
+  color: #e6eef9;
+}
+.nav-item.active > .icon { color: #c8d8ec; }
+.nav-count { font-size: 12px; background: #314157; color: #d4deec; }
+.main-shell { margin-left: 244px; min-width: 0; }
+.topbar {
+  min-height: 78px;
+  height: auto;
+  padding: 17px 32px;
+  background: #151d29;
+  border-color: var(--border);
+}
+.breadcrumb { font-size: 13px; color: var(--muted); }
+.breadcrumb strong { color: #cbd7e6; }
+.breadcrumb .mobile-site-name { display: none; }
+.top-actions { gap: 12px; font-size: 13px; min-width: 0; }
+.active-alliance { min-width: 0; }
+.active-alliance > span { font-size: 12px; letter-spacing: .5px; }
+.active-alliance select {
+  min-height: 42px;
+  font-size: 13px;
+  max-width: 170px;
+  color: #d7e1ef;
+}
+.status-dot { box-shadow: none; }
+main { max-width: 1320px; padding: 30px 32px 40px; }
+.page-heading { margin-bottom: 26px; align-items: center; }
+.page-heading > div { min-width: 0; }
+h1,
+.page-heading h1 {
+  font-size: clamp(25px, 2.2vw, 32px);
+  line-height: 1.25;
+  letter-spacing: -.6px;
+  margin: 12px 0 8px;
+}
+.page-heading p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.page-heading-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.page-heading-actions:empty { display: none; }
+.page-heading-actions > .button { margin: 0; }
+.eyebrow { font-size: 12px; color: var(--muted); letter-spacing: .7px; }
+.access-banner {
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  padding: 5px 9px;
+  margin: 0;
+  gap: 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: #1e2a3b;
+  border-color: #3b4d66;
+  color: #becde1;
+}
+.access-banner .icon { width: 14px; height: 14px; }
+.access-banner.admin { background: #20342c; border-color: #456453; color: #bed8c8; }
+
+.panel { background: var(--panel); border-color: var(--border); border-radius: 10px; padding: 22px; }
+.section-heading { margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.section-heading h2 { font-size: 17px; letter-spacing: -.15px; line-height: 1.4; }
+.section-heading h3 { font-size: 15px; }
+.muted-number { font-size: 13px; color: var(--muted); }
+.overview-alliances { margin-top: 4px; }
+.alliance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.alliance-card { padding: 24px; }
+.alliance-card:hover { background: #202c3b; border-color: #647a98; }
+.alliance-card.selected { border-color: #6b83a3; }
+.alliance-top { align-items: center; gap: 14px; margin-bottom: 22px; }
+.alliance-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.alliance-card h3 { font-size: 21px; letter-spacing: -.35px; margin: 0; line-height: 1.3; overflow-wrap: anywhere; }
+.emblem { width: 42px; height: 42px; border-radius: 9px; }
+.level-pill { font-size: 12px; padding: 6px 9px; white-space: nowrap; flex-shrink: 0; }
+.alliance-resources { gap: 20px; margin: 0 0 20px; }
+.alliance-resources > div > span { font-size: 13px; color: #b2c0d3; gap: 7px; }
+.alliance-resources .icon { width: 15px; height: 15px; }
+.alliance-resources strong { font-size: 29px; margin-top: 6px; line-height: 1.2; letter-spacing: -.6px; overflow-wrap: anywhere; }
+.alliance-resources > div + div { padding-left: 20px; border-color: var(--border); }
+.xp-label { font-size: 12px; color: #b2c0d3; line-height: 1.5; gap: 12px; margin-bottom: 9px; }
+.track { height: 6px; background: #344154; }
+.role-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px 18px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.role-strip > span {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr);
+  align-items: center;
+  justify-items: start;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+.role-strip .role-mini { grid-row: 1 / span 2; width: 23px; height: 27px; border-radius: 5px; }
+.role-mini > .icon { width: 15px; height: 15px; }
+.role-strip .role-name { grid-column: 2; font-size: 12px; line-height: 1.5; color: #aebdd1; letter-spacing: 0; white-space: normal; overflow-wrap: anywhere; }
+.role-strip strong { grid-column: 2; font-size: 16px; font-weight: 500; color: #dbe5f2; line-height: 1.4; }
+.role-strip strong em { font-size: 12px; color: #aebdd1; }
+
+.button,
+.auth-button,
+.page-heading > .button,
+.toolbar .button,
+.toolbar-actions .button,
+.section-heading > .button,
+.catalog-context .button,
+.backup-actions .button,
+.item-actions .button,
+.planet-record .button,
+.alliance-banner .button,
+.level-summary .button {
+  min-height: 42px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.primary { background: #bdd4c6; border-color: #bdd4c6; color: #1e3028; }
+.primary:hover { background: #d0e1d6; }
+.secondary { background: #2a374a; border-color: #4d607b; color: #dae4f2; }
+.secondary:hover { background: #34465e; border-color: #7289a8; }
+.ghost { color: #c0cee0; border-color: #485c76; }
+.ghost:hover { background: #253347; }
+.icon-button,
+.icon-button.mobile-menu,
+.planet-record .section-heading .icon-button,
+.interface-card .section-heading > .icon-button,
+.item-card-top > .icon-button {
+  width: 42px;
+  height: 42px;
+  color: #adbed4;
+}
+.icon-button .icon { width: 18px; height: 18px; }
+.text-button,
+.planet-ap .text-button { min-height: 40px; font-size: 13px; color: #bdd0e7; }
+.panel-note,
+.section-note,
+.fine-note,
+.alliance-card > p,
+.alliance-banner p,
+.child-row small,
+.inventory-row small,
+.earned-total,
+.source-note strong,
+.source-notes dt { font-size: 12px; color: #aebcd0; }
+.alliance-banner { background: var(--panel); padding: 24px; }
+.alliance-banner h2 { font-size: 28px; line-height: 1.3; }
+.alliance-banner .eyebrow { font-size: 12px; }
+.detail-stats { gap: 16px; margin-bottom: 22px; }
+.detail-stats .stat { padding: 22px; }
+.stat-value,
+.detail-stats .stat-value { font-size: 28px; margin: 4px 0 10px; line-height: 1.2; overflow-wrap: anywhere; }
+.stat h3,
+.detail-stats .stat h3 { font-size: 13px; line-height: 1.5; }
+.stat p,
+.detail-stats .stat p { font-size: 12px; color: #aab9cd; line-height: 1.6; }
+.stat-icon { background: #273447; }
+.function-card { padding: 20px; }
+.function-card h3 { font-size: 13px; line-height: 1.5; }
+.function-card > strong { font-size: 28px; }
+.function-card > span:not(.stat-icon),
+.function-card > small { font-size: 12px; color: #aebdd1; }
+.child-row strong,
+.inventory-row strong { font-size: 14px; }
+.ownership-list > div,
+.resource-mini > span { font-size: 13px; }
+.ownership-list .tag { font-size: 12px; }
+.alliance-tabs { gap: 10px; }
+.alliance-tab { min-height: 44px; font-size: 13px; padding: 9px 12px; color: #bfcee3; }
+.alliance-tab > span:last-child { font-size: 12px; color: #adbed4; }
+.alliance-banner p,
+.source-notes dd,
+.source-note p { font-size: 13px; }
+.source-notes summary { min-height: 32px; font-size: 13px; }
+.source-note { background: #202d3e; border-color: #40536d; }
+.level-summary p { font-size: 13px; color: #bbcbdf; }
+.unknown-value,
+.graviton-purchases { font-size: 12px !important; color: #adbed4 !important; }
+
+.interface-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.interface-card { padding: 24px; text-align: left; background: var(--panel); }
+.interface-card .interface-device { margin: -12px 0 20px; font-size: 12px; line-height: 1.6; color: #adbed4; text-align: left; }
+.interface-heading { flex-wrap: nowrap; align-items: center; gap: 12px; margin-bottom: 24px; }
+.interface-heading h2,
+.interface-card .section-heading h2 { flex: 1; min-width: 0; margin: 0; font-size: 21px; line-height: 1.3; overflow-wrap: anywhere; }
+.interface-card .section-heading .mini { width: 35px; height: 35px; }
+.interface-values { gap: 14px; }
+.interface-values > div { text-align: left; min-width: 0; }
+.interface-values > div > span { font-size: 12px; line-height: 1.5; color: #adbed4; white-space: normal; justify-content: flex-start; text-align: left; }
+.interface-values strong { font-size: 28px; line-height: 1.3; margin-top: 8px; letter-spacing: -.4px; }
+.interface-values small { font-size: 12px; color: #adbed4; letter-spacing: 0; }
+.interface-values .icon { display: none; }
+.interface-values .metric-unknown { font-size: 14px; color: #adbed4; letter-spacing: 0; }
+.interface-card .charge-meter { margin-top: 20px; }
+.interface-card > .button { width: 100%; margin-top: 4px; }
+.interface-card .graviton-purchases { margin: 18px 0 !important; }
+.planet-banner { background: var(--panel); padding: 24px; }
+.planet-banner h2 { font-size: 30px; }
+.planet-banner .eyebrow { font-size: 12px; }
+.planet-banner p { font-size: 14px; color: #b0bfd3; }
+.planet-records { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.planet-record h3 { font-size: 20px; }
+.planet-record p,
+.bonus-list { font-size: 13px; color: #b7c6db; }
+.planet-ap { font-size: 13px; flex-wrap: wrap; gap: 12px; }
+.planet-ap strong { font-size: 26px; }
+.planet-record .tag,
+.tag,
+.pill { font-size: 12px; }
+.planet-ball { box-shadow: none; }
+.segment-tabs button,
+.planet-tabs button { min-height: 42px; font-size: 13px; padding: 10px 14px; }
+.segment-tabs button > span { font-size: 12px; }
+.catalog-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; }
+.catalog-context { padding: 18px; gap: 14px; flex-wrap: wrap; background: #1b2737; border-color: var(--border); }
+.catalog-context > span { font-size: 13px; flex-wrap: wrap; line-height: 1.6; }
+.catalog-context > div { flex-wrap: wrap; gap: 10px; }
+.item-card { padding: 22px; }
+.item-card h3 { font-size: 18px; line-height: 1.4; }
+.item-card-top { align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.item-card-top h3 { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.item-card-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; max-width: 45%; flex-shrink: 0; }
+.item-card-controls .tag { white-space: normal; line-height: 1.4; }
+.item-effect { font-size: 14px; color: #b4c4da; line-height: 1.65; }
+.item-card-top .tag { font-size: 12px; }
+.item-card-top .item-icon { width: 34px; height: 34px; }
+.recipe-preview { padding: 14px; background: #151f2d; border-color: #34475f; }
+.recipe-preview > span,
+.recipe-preview small { font-size: 12px; color: #9eb4d0; }
+.recipe-preview summary { min-height: 32px; cursor: pointer; font-size: 12px; line-height: 1.6; color: #c2d0e4; }
+.recipe-preview summary small { font-size: 12px; color: #adbed5; }
+.recipe-preview p { font-size: 13px; line-height: 1.65; color: #bfcee2; }
+.price { font-size: 24px; }
+.price > span,
+.price .unknown-price,
+.owned-label { font-size: 12px; line-height: 1.5; }
+.item-bottom { gap: 12px; flex-wrap: wrap; align-items: center; }
+.item-actions { gap: 10px; flex-wrap: wrap; }
+.item-actions .button { flex: 1; }
+.filter-chips button { min-height: 42px; font-size: 13px; }
+.search { min-height: 44px; padding: 10px 13px; background: #1c293a; border-color: #455b76; }
+.search input { font-size: 14px; color: #dce6f4; }
+.search input::placeholder { color: #a1b4ce; }
+.info-note,
+.warning,
+.warning.subtle { font-size: 13px; line-height: 1.65; }
+.event-row strong,
+.history-panel .event-row strong { font-size: 14px; line-height: 1.5; }
+.event-row p,
+.history-panel .event-row p { font-size: 13px; line-height: 1.65; color: #b1c1d8; }
+.event-row small,
+.history-panel .event-row small { font-size: 12px; color: #a3b5cf; }
+.history-panel { padding: 8px 22px; }
+
+dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding: 26px; overflow: auto; background: #1b2636; border-color: #58708f; }
+.modal-header { gap: 14px; align-items: center; }
+.modal-header h2 { font-size: 23px; line-height: 1.4; overflow-wrap: anywhere; }
+.modal-intro,
+.checkbox-field,
+.form-error { font-size: 13px; line-height: 1.7; }
+.field > span { font-size: 13px; color: #bdcde2; line-height: 1.5; }
+.field input,
+.field select,
+.field textarea { min-height: 44px; padding: 11px 12px; font-size: 14px; color: #e2ebf8; background: #141f2e; border-color: #4c6584; }
+.field input::placeholder,
+.field textarea::placeholder { font-size: 13px; color: #9ab0cc; }
+.checkbox-field { align-items: center; min-height: 40px; gap: 10px; }
+.checkbox-field input { width: 18px; height: 18px; margin: 0; }
+.submit { min-height: 44px; }
+.results-head,
+.result-row { grid-template-columns: minmax(110px, 1.6fr) 58px 82px 82px; gap: 10px; }
+.results-head { font-size: 12px; color: #a3bad8; }
+.result-row > label,
+.result-row label { font-size: 13px; line-height: 1.5; min-width: 0; }
+.result-row label span { overflow-wrap: anywhere; }
+.result-row > input,
+.result-row input { min-height: 44px; font-size: 14px; }
+.recipe-detail strong,
+.recipe-stock,
+.recipe-variants span,
+.recipe-variants p { font-size: 13px; }
+.recipe-detail p { font-size: 14px; line-height: 1.7; }
+.purchase-summary { font-size: 13px; flex-wrap: wrap; }
+.purchase-summary strong { font-size: 17px; }
+.settings-backup h3 { font-size: 16px; }
+.inventory-row { gap: 12px; }
+.inventory-row strong { line-height: 1.5; }
+.inventory-row > b { font-size: 14px; }
+
+@media (min-width: 1550px) {
+  main { padding-top: 36px; }
+}
+@media (max-width: 1100px) {
+  main { padding-left: 24px; padding-right: 24px; }
+  .topbar { padding-left: 24px; padding-right: 24px; }
+  .top-actions { gap: 8px; }
+  .alliance-card { padding: 20px; }
+  .alliance-top { flex-wrap: wrap; gap: 12px; }
+  .alliance-card h3 { font-size: 20px; }
+  .detail-stats { grid-template-columns: 1fr; }
+  .detail-stats .stat { padding: 20px; }
+  .detail-stats .stat p { display: block; }
+  .functions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .planet-records { grid-template-columns: 1fr; }
+  .interface-grid { grid-template-columns: 1fr; }
+  .active-alliance select { max-width: 130px; }
+}
+@media (max-width: 760px) {
+  .sidebar { top: 78px; width: 270px; max-width: calc(100vw - 24px); padding: 22px 18px; z-index: 14; }
+  .sidebar .brand { display: flex; }
+  .main-shell { margin-left: 0; }
+  .topbar { height: 78px; min-height: 78px; padding: 12px 16px; gap: 10px; }
+  .topbar .breadcrumb { display: flex; font-size: 12px; flex: 1; }
+  .breadcrumb > strong { display: inline; }
+  .breadcrumb .desktop-section { display: none; }
+  .breadcrumb .mobile-site-name { display: block; font-size: 12px; line-height: 1.25; color: #b9c8dc; }
+  .breadcrumb .mobile-site-name b { display: block; margin-top: 3px; font-size: 17px; font-weight: 600; color: #e5ebf4; }
+  .top-actions { gap: 8px; font-size: 12px; }
+  .top-divider { display: none; }
+  .active-alliance { min-width: 0; }
+  .active-alliance select { font-size: 12px; max-width: 120px; min-height: 44px; padding: 8px 2px; }
+  .button,
+  .auth-button { min-height: 44px; }
+  .icon-button,
+  .icon-button.mobile-menu { width: 44px; height: 44px; }
+  .auth-button { font-size: 12px; padding: 10px; }
+  main { padding: 26px 20px 32px; }
+  .page-heading { align-items: flex-start; gap: 18px; margin-bottom: 24px; }
+  .page-heading h1 { font-size: 28px; }
+  .page-heading p { max-width: 100%; font-size: 14px; }
+  .page-heading-actions { gap: 10px; }
+  .alliance-grid { grid-template-columns: 1fr; gap: 18px; }
+  .alliance-card { padding: 23px; }
+  .alliance-card h3 { font-size: 22px; }
+  .alliance-top { flex-wrap: nowrap; }
+  .alliance-resources strong { font-size: 29px; }
+  .role-strip { gap: 15px 18px; }
+  .alliance-banner h2 { font-size: 27px; }
+  .detail-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .detail-stats .stat { padding: 18px 14px; }
+  .detail-stats .stat h3 { font-size: 12px; }
+  .detail-stats .stat p { font-size: 12px; }
+  .detail-stats .stat-value { font-size: 26px; }
+  .function-card { padding: 20px; }
+  .function-card h3 { font-size: 13px; }
+  .function-card > span:not(.stat-icon),
+  .function-card > small { font-size: 12px; }
+  .section-note { font-size: 12px; }
+  .alliance-tab,
+  .alliance-tab > span:last-child { font-size: 12px; }
+  .alliance-tab .mini { width: 29px; height: 29px; }
+  .alliance-banner .eyebrow,
+  .planet-banner .eyebrow { font-size: 12px; }
+  .alliance-banner p { font-size: 13px; }
+  .source-notes { padding: 20px; }
+  .source-notes dl > div { grid-template-columns: 1fr; gap: 5px; }
+  .source-notes summary,
+  .source-notes dt { font-size: 12px; }
+  .source-note { padding: 17px; }
+  .planet-banner { padding: 23px; }
+  .planet-banner p { font-size: 13px; }
+  .planet-record { padding: 22px; }
+  .planet-record h3 { font-size: 20px; }
+  .planet-record .tag,
+  .planet-record p,
+  .bonus-list { font-size: 12px; }
+  .planet-ap { padding: 17px; font-size: 13px; }
+  .segment-tabs { width: 100%; gap: 5px; }
+  .segment-tabs button { font-size: 12px; padding: 10px 12px; }
+  .segment-tabs button > span { font-size: 12px; }
+  .interface-card { padding: 23px; }
+  .interface-values strong { font-size: 29px; }
+  .interface-values > div > span,
+  .interface-values small { font-size: 12px; }
+  .catalog-context { padding: 18px; }
+  .catalog-context > span { font-size: 13px; }
+  .item-card { padding: 22px; }
+  .item-card h3 { font-size: 18px; }
+  .item-effect { font-size: 14px; }
+  .item-card-top .tag { font-size: 12px; }
+  .recipe-preview p { font-size: 13px; }
+  .recipe-preview > span { font-size: 12px; }
+  .filter-chips button { font-size: 12px; min-height: 44px; }
+  .price { font-size: 24px; }
+  .price > span,
+  .owned-label { font-size: 12px; }
+  .field input,
+  .field select,
+  .field textarea,
+  .search input { font-size: 16px; }
+  .field > span { font-size: 13px; }
+  .modal-header h2 { font-size: 21px; }
+  .modal-intro { font-size: 13px; }
+  .inventory-row strong { font-size: 14px; }
+  .inventory-row small { font-size: 12px; }
+}
+@media (max-width: 540px) {
+  .topbar { height: 120px; min-height: 120px; flex-wrap: wrap; padding: 12px; gap: 8px; }
+  .topbar .breadcrumb { flex-basis: calc(100% - 56px); }
+  .top-actions { flex-basis: 100%; width: 100%; justify-content: space-between; gap: 8px; }
+  .sol-label { font-size: 12px; white-space: nowrap; }
+  .active-alliance { flex: 1; min-width: 0; max-width: 135px; }
+  .active-alliance select { width: 100%; max-width: 100%; min-width: 0; }
+  .auth-button { flex-shrink: 0; padding: 10px 8px; }
+  .sidebar { top: 120px; }
+  main { padding-left: 16px; padding-right: 16px; }
+  .page-heading h1 { font-size: 26px; }
+  .page-heading-actions { width: 100%; }
+  .page-heading-actions .button { flex: 1; }
+  .section-heading { align-items: flex-start; }
+  .alliance-card { padding: 20px; }
+  .alliance-top { gap: 10px; }
+  .alliance-identity { gap: 9px; }
+  .alliance-card h3 { font-size: 20px; }
+  .alliance-identity .emblem { width: 34px; height: 34px; }
+  .level-pill { padding: 5px 7px; }
+  .alliance-resources { gap: 14px; }
+  .alliance-resources > div + div { padding-left: 14px; }
+  .alliance-resources > div > span { font-size: 12px; gap: 5px; }
+  .alliance-resources strong { font-size: 27px; }
+  .role-strip { gap: 14px 12px; }
+  .role-strip > span { grid-template-columns: 18px minmax(0, 1fr); column-gap: 6px; }
+  .role-strip .role-mini { width: 18px; height: 25px; }
+  .role-mini > .icon { width: 13px; height: 13px; }
+  .role-strip .role-name { font-size: 12px; }
+  .detail-stats { grid-template-columns: 1fr; }
+  .detail-stats .stat { padding: 20px; }
+  .detail-stats .stat-value { font-size: 28px; }
+  .alliance-banner { padding: 21px; }
+  .alliance-banner > .button { width: 100%; margin-left: 0; }
+  .functions-grid { gap: 12px; }
+  .function-card { padding: 18px; }
+  .function-card h3 { font-size: 13px; overflow-wrap: anywhere; }
+  .planet-banner .planet-ball { width: 48px; height: 48px; margin-left: 14px; }
+  .planet-banner h2 { font-size: 28px; }
+  .planet-banner p { max-width: none; }
+  .planet-records,
+  .interface-grid { grid-template-columns: 1fr; }
+  .interface-card { padding: 21px; }
+  .interface-heading { gap: 10px; margin-bottom: 20px; }
+  .interface-heading h2,
+  .interface-card .section-heading h2 { font-size: 20px; }
+  .interface-values { gap: 10px; }
+  .interface-values strong { font-size: 26px; }
+  .interface-values > div > span { font-size: 12px; }
+  .interface-values .metric-unknown { font-size: 13px; }
+  .segment-tabs button { flex: 1 1 100px; gap: 6px; font-size: 12px; padding: 10px; }
+  .segment-tabs button > .icon { width: 15px; height: 15px; }
+  .catalog-context > div { width: 100%; }
+  .catalog-context .button { flex: 1; }
+  .toolbar-actions { width: 100%; gap: 10px; }
+  .toolbar-actions .button { flex: 1; }
+  .history-panel { padding: 5px 18px; }
+  dialog { width: calc(100% - 24px); padding: 20px 18px; }
+  .modal-header h2 { font-size: 20px; }
+  .two-fields { grid-template-columns: 1fr; gap: 0; }
+  .two-fields .field { margin: 12px 0; }
+  .results-head,
+  .result-row { grid-template-columns: minmax(72px, 1fr) 40px 56px 56px; gap: 4px; }
+  .results-head { font-size: 12px; }
+  .result-row > label,
+  .result-row label { font-size: 12px; gap: 5px; }
+  .result-row > input,
+  .result-row input { font-size: 13px; padding: 9px 3px; }
+  .result-row label input { width: 16px; height: 16px; min-height: 0; }
+  .purchase-summary { font-size: 13px; }
+  .purchase-summary strong { font-size: 16px; }
+  .recipe-detail p { font-size: 14px; }
+  .backup-actions .button { flex: 1 1 120px; }
+}
+
+@media(max-width:380px){
+ .alliance-top{flex-wrap:wrap;align-items:flex-start;gap:10px}
+ .alliance-identity{flex:1 1 100%;min-width:0}
+ .alliance-top .level-pill{margin-left:46px}
+}
 
   </style>
 </head>
@@ -493,6 +1061,7 @@ function validateState(d) {
 // --- main.js ---
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=n=>Number(n).toLocaleString('ru-RU');
+const SITE_NAME='Космический корабль Генезис';
 const app=document.querySelector('#app');
 let state,storageProblem=false,hasLegacy=false;
 try { state=app.dataset.snapshot?JSON.parse(app.dataset.snapshot):initialState(); if(!validateState(state))throw Error(); } catch { state=initialState(); }
@@ -501,7 +1070,7 @@ let auth={role:'viewer',configured:false},serverReady=false,revision=0,busy=fals
 const readActions=new Set(['noop','close','menu','login','logout','selectAlliance','activate','openPlanet','planetTab','equipmentTab','catalogFilter','item','inventory','gotoEquipment','export','downloadSnapshot']);
 const isAdmin=()=>serverReady&&auth.role==='admin';
 let page='overview',activeId=state.alliances[0]?.id||'',planet='cadia',equipmentTab='equipment',search='',catalogFilter='all';
-const nav=[['overview','grid','Центр управления'],['alliances','people','Альянсы'],['planets','orbit','Планеты'],['interface','bolt','Интерфейс'],['access','key','Доступ'],['upgrades','trending','Прокачка'],['equipment','box','Эквип'],['history','clock','Хроника']];
+const nav=[['overview','grid','Обзор'],['alliances','people','Альянсы'],['planets','orbit','Планеты'],['interface','bolt','Интерфейс'],['access','key','Доступ'],['upgrades','trending','Прокачка'],['equipment','box','Эквип'],['history','clock','Хроника']];
 const active=()=>state.alliances.find(a=>a.id===activeId);
 const match=t=>String(t).toLowerCase().includes(search.toLowerCase());
 function toast(message,error=false){document.querySelector('.toast')?.remove();const el=document.createElement('div');el.className=`toast ${error?'error':''}`;el.setAttribute('role','status');el.textContent=message;document.body.append(el);setTimeout(()=>el.remove(),4500);}
@@ -540,43 +1109,80 @@ const empty=(title,note,action='')=>`<div class="empty">${icon('orbit')}<h2>${ti
 const allianceOptions=(id=activeId)=>state.alliances.map(a=>`<option value="${a.id}" ${a.id===id?'selected':''}>${esc(a.name)}</option>`).join('');
 function render(){
  if(!state.alliances.some(a=>a.id===activeId))activeId=state.alliances[0]?.id||'';
- document.title=`Орбита · ${state.shift.name}`;
- app.innerHTML=`<aside class="sidebar"><a href="#overview" class="brand"><span>${icon('orbit')}</span>орбита<span class="brand-point">.</span></a><p class="brand-subtitle">ЦЕНТР УПРАВЛЕНИЯ СМЕНОЙ</p><button class="shift-switcher" data-action="${isAdmin()?'settings':'noop'}"><span class="shift-symbol">${icon('rocket')}</span><span><strong>${esc(state.shift.name)}</strong><small>Игровая вселенная</small></span>${icon('down')}</button><div class="nav-label">НАВИГАЦИЯ</div><nav>${nav.map(([id,i,label])=>`<button class="nav-item ${page===id?'active':''}" data-page="${id}">${icon(i)}<span>${label}</span>${id==='planets'?'<span class="nav-count">3</span>':''}</button>`).join('')}</nav><div class="sidebar-bottom"><div class="side-mission">${icon('spark')}<strong>У каждой команды<br>своя вселенная.</strong><p>Следите за прогрессом.<br>Создавайте приключения.</p><div class="side-stars">✦ · ✧</div></div><button class="nav-item" data-action="settings">${icon('settings')}Настройки смены</button><div class="operator"><span class="avatar">П</span><div><strong>${isAdmin()?'Прайм':'Зритель'}</strong><small>${isAdmin()?'Редактирование доступно':'Только просмотр'}</small></div><span class="status-dot"></span></div></div></aside><div class="main-shell"><header class="topbar"><button class="icon-button mobile-menu" aria-label="Открыть меню" data-action="menu">${icon('menu')}</button><div class="breadcrumb">Смена <span>/</span> <strong>${nav.find(n=>n[0]===page)[2]}</strong></div><div class="top-actions"><span class="status-dot"></span><span class="sol-label">Сол ${state.shift.day} / ${state.shift.duration}</span><span class="top-divider"></span><label class="active-alliance"><span>АЛЬЯНС</span><select id="active-alliance" aria-label="Активный альянс">${state.alliances.length?allianceOptions():'<option value="">Нет альянсов</option>'}</select></label>${button(isAdmin()?'Выйти':'Вход организатора',isAdmin()?'logout':'login','ghost auth-button')}</div></header><main><div class="access-banner ${isAdmin()?'admin':'viewer'}">${icon(isAdmin()?'key':'shield')}<span>${serverReady?(isAdmin()?'Вы — организатор. Изменения сохраняются для всех зрителей.':'Режим просмотра. Прогресс обновляется автоматически.'):'HTML-копия для просмотра. Общие данные доступны по ссылке на сайт.'}</span></div><div class="page-heading"><div><div class="eyebrow">КОСМИЧЕСКАЯ СМЕНА · СОЛ ${String(state.shift.day).padStart(2,'0')}</div><h1>${({overview:'Вселенная вашей смены',alliances:'Альянсы и их прогресс',planets:'Карта экспедиций',interface:'Интерфейсы альянсов',access:'Доступ к возможностям',upgrades:'Прокачка альянса',equipment:'Эквип и технологии',history:'Хроника приключений'})[page]}</h1><p>${({overview:'Все открытия, ресурсы и достижения — на одной орбите.',alliances:'Команда, пять подфункций и общий путь к новым уровням.',planets:'Три мира. Три направления. Ваша история освоения.',interface:'Заряд, гравитоны и стойкость каждого альянса.',access:'Особые возможности, которые можно купить за крышечки.',upgrades:'От первой высадки до собственного экспедиционного ядра.',equipment:'Предметы, способности и инструменты для следующего открытия.',history:'Результаты мероприятий и все изменения игровой смены.'})[page]}</p></div>${button(`${icon('plus')} Изменить показатели`,'adjust','primary')}</div>${storageProblem?'<div class="warning">Хранилище недоступно или сохранённый файл повреждён. Экспортируйте данные перед продолжением.</div>':''}${({overview:overview,alliances:alliancesPage,planets:planetsPage,interface:interfacesPage,access:catalogPage,upgrades:catalogPage,equipment:catalogPage,history:historyPage})[page]()}<footer><span>${icon('orbit')} Открывайте миры. Растите вместе.</span><span>${serverReady?'Общая смена · '+(isAdmin()?'Администратор':'Только просмотр'):'Просмотр HTML-копии'}</span></footer></main></div><dialog id="modal"></dialog>`;applyAccessControls();
+ document.title=SITE_NAME;
+ const titles={overview:'Прогресс альянсов',alliances:'Альянсы',planets:'Планеты',interface:'Интерфейсы',access:'Доступ',upgrades:'Прокачка',equipment:'Эквип',history:'Хроника'};
+ const descriptions={overview:'Крышечки, опыт и уровни всех альянсов.',alliances:'Показатели, участники и владения выбранного альянса.',planets:'Аванпосты Кадии, исследования Фенриса и шаттлы Кронуса.',interface:'Заряд, гравитоны и стойкость.',access:'Особые возможности за крышечки.',upgrades:'Улучшения альянса: цена, эффект и крафт.',equipment:'Предметы, способности и инструменты.',history:'Награды за мероприятия и история изменений.'};
+ app.innerHTML=`<aside class="sidebar">
+  <a href="#overview" class="brand" aria-label="${SITE_NAME} — обзор"><span class="brand-mark">${icon('rocket')}</span><span class="brand-copy"><span>Космический корабль</span><strong>Генезис</strong></span></a>
+  <button class="shift-switcher" data-action="${isAdmin()?'settings':'noop'}" ${isAdmin()?'':'disabled'}><span class="shift-symbol">${icon('settings')}</span><span><strong>${esc(state.shift.name)}</strong><small>${isAdmin()?'Настройки смены':'Текущая смена'}</small></span>${isAdmin()?icon('down'):''}</button>
+  <nav aria-label="Разделы сайта">${nav.map(([id,i,label])=>`<button class="nav-item ${page===id?'active':''}" data-page="${id}" ${page===id?'aria-current="page"':''}>${icon(i)}<span>${label}</span></button>`).join('')}</nav>
+ </aside><div class="main-shell"><header class="topbar">
+  <button class="icon-button mobile-menu" aria-label="Открыть меню" data-action="menu">${icon('menu')}</button>
+  <div class="breadcrumb"><strong class="desktop-section">${nav.find(n=>n[0]===page)[2]}</strong><span class="mobile-site-name">Космический корабль<b>Генезис</b></span></div>
+  <div class="top-actions"><span class="sol-label">Сол ${state.shift.day} / ${state.shift.duration}</span><span class="top-divider"></span><label class="active-alliance"><span>Альянс</span><select id="active-alliance" aria-label="Активный альянс">${state.alliances.length?allianceOptions():'<option value="">Нет альянсов</option>'}</select></label>${button(isAdmin()?'Выйти':'Вход организатора',isAdmin()?'logout':'login','ghost auth-button')}</div>
+ </header><main>
+  <div class="page-heading"><div><div class="access-banner ${isAdmin()?'admin':'viewer'}">${icon(isAdmin()?'key':'shield')}<span>${serverReady?(isAdmin()?'Организатор':'Только просмотр'):'Копия для просмотра'}</span></div><h1>${titles[page]}</h1><p>${descriptions[page]}</p></div><div class="page-heading-actions">${page==='overview'?button('Результаты мероприятия','eventResults','secondary'):''}${button(`${icon('plus')} Изменить показатели`,'adjust','primary')}</div></div>
+  ${storageProblem?'<div class="warning">Хранилище недоступно или сохранённый файл повреждён. Экспортируйте данные перед продолжением.</div>':''}
+  ${({overview,alliances:alliancesPage,planets:planetsPage,interface:interfacesPage,access:catalogPage,upgrades:catalogPage,equipment:catalogPage,history:historyPage})[page]()}
+ </main></div><dialog id="modal"></dialog>`;
+ applyAccessControls();
 }
 function overview(){
- const totalCaps=state.alliances.reduce((n,a)=>n+a.caps,0),totalXP=state.alliances.reduce((n,a)=>n+a.xp,0),sectors=state.alliances.reduce((n,a)=>n+a.planets.fenris.territories.length,0);
- return `<section class="hero"><div class="hero-copy"><span class="pill hero-pill"><span class="status-dot"></span> ПРИКЛЮЧЕНИЕ ПРОДОЛЖАЕТСЯ</span><h2>Курс на<br><span>новые миры.</span></h2><p>${esc(state.shift.name)}<br>Каждый сол приближает команду к звёздам.</p><div class="shift-progress"><div><span>Путь нашей смены</span><strong>${state.shift.day} из ${state.shift.duration} солов</strong></div><div class="track"><i style="width:${state.shift.day/state.shift.duration*100}%"></i></div></div></div>${starMap()}<span class="hero-coordinate">СЕКТОР 07 / ОРБИТАЛЬНАЯ СВЯЗЬ АКТИВНА</span></section><section class="stats-grid">${stat('people',state.alliances.length,'Альянсов в экспедиции','Каждый — часть общей истории','blue')}${stat('coin',num(totalCaps),'Крышечек в обороте','Текущий баланс всех команд','orange')}${stat('spark',num(totalXP),'Опыта заработано','Открываем новые уровни','purple')}${stat('compass',sectors,'Территорий исследовано','Экспедиции на Фенрисе','green')}</section><div class="dashboard-grid"><div><section><div class="section-heading"><h2>На связи — альянсы <span class="muted-number">${state.alliances.length}</span></h2><button class="text-button" data-page="alliances">Все альянсы ${icon('arrow')}</button></div><div class="alliance-grid">${state.alliances.map(allianceCard).join('')||empty('Начнём ваше приключение','Создайте первый альянс.',button('Добавить альянс','addAlliance'))}</div></section><section class="planet-section"><div class="section-heading"><h2>Планеты смены</h2><button class="text-button" data-page="planets">К карте ${icon('arrow')}</button></div><div class="planet-overview-grid">${planets.map(p=>`<button class="planet-overview panel" data-action="openPlanet" data-planet="${p.id}"><span class="planet-ball ${p.id}"></span><span class="planet-caption">${p.label}</span><h3>${p.name}</h3><div class="planet-count">${state.alliances.reduce((n,a)=>n+(p.id==='cadia'?a.planets.cadia.outposts.length:p.id==='fenris'?a.planets.fenris.territories.length:a.planets.cronus.shuttles.length),0)} <small>${p.id==='cadia'?'аванпостов':p.id==='fenris'?'территорий':'шаттлов'}</small>${icon('arrow')}</div></button>`).join('')}</div></section></div><aside class="right-column"><section class="panel ranking"><div class="section-heading"><h2>${icon('trophy')} На звёздной орбите</h2><span class="status-dot"></span></div><p class="panel-note">Рейтинг альянсов по опыту</p>${[...state.alliances].sort((a,b)=>b.xp-a.xp).slice(0,5).map((a,i)=>`<button class="ranking-row" data-action="selectAlliance" data-id="${a.id}"><span class="rank">${String(i+1).padStart(2,'0')}</span><span class="emblem mini ${a.color}">${emblem(a.color)}</span><span><strong>${esc(a.name)}</strong><small>Уровень ${allianceLevel(state,a)}</small></span><b>${num(a.xp)}<small>опыта</small></b></button>`).join('')}<div class="ranking-footer">${icon('spark')} Следующая легенда — ваша</div></section><section class="panel recent"><div class="section-heading"><h2>Последние сигналы</h2><span class="pulse-dot"></span></div>${state.events.slice(0,3).map(eventRow).join('')||'<p class="panel-note">Здесь появятся события вашей смены.</p>'}<button class="text-button history-link" data-page="history">Вся хроника ${icon('arrow')}</button></section><div class="daily-callout"><span class="callout-tag">ДЛЯ ОРГАНИЗАТОРА</span><h3>Завершили мероприятие?</h3><p>Запишите места и награды.<br>Прогресс обновится у всех альянсов.</p>${button(`Записать результаты ${icon('arrow')}`,'eventResults','secondary')}</div></aside></div>`;
+ return `<section class="overview-alliances"><div class="section-heading"><h2>Все альянсы <span class="muted-number">${state.alliances.length}</span></h2><button class="text-button" data-page="alliances">Открыть альянс ${icon('arrow')}</button></div><div class="alliance-grid">${state.alliances.map(allianceCard).join('')||empty('Нет альянсов','Добавьте первый альянс смены.',button('Добавить альянс','addAlliance'))}</div></section>`;
 }
 function stat(i,value,label,note,color){return `<article class="stat panel"><span class="stat-icon ${color}">${icon(i)}</span><strong class="stat-value">${value}</strong><h3>${label}</h3><p>${note}</p></article>`;}
-function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'наград после переноса':'заработано за смену'}`;}
+function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'получено с начала учёта':'заработано за смену'}`;}
 function levelDescription(a){const bonus=a.bonusLevels||0;return `${allianceLevel(state,a)-bonus} по опыту${bonus?` + ${bonus} найдено на карте`:''}`;}
 function sourceNotesPanel(a){
  const labels={level:'Уровень в таблице',cadia:'Кадия',fenris:'Фенрис',cronus:'Кронус',missing:'Не указано в источнике'};
  const rows=Object.entries(a.sourceNotes||{}).filter(([key,value])=>labels[key]&&value);
- return rows.length?`<details class="source-notes panel"><summary>${icon('book')} Заметки смены из исходной таблицы</summary><dl>${rows.map(([key,value])=>`<div><dt>${labels[key]}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></details>`:'';
+ return rows.length?`<details class="source-notes panel"><summary>${icon('book')} Заметки из таблицы</summary><dl>${rows.map(([key,value])=>`<div><dt>${labels[key]}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></details>`:'';
 }
-function planetSourceNote(a){const note=a.sourceNotes?.[planet];return note?`<div class="source-note">${icon('book')}<div><strong>Запись альянса на планете</strong><p>${esc(note)}</p></div></div>`:'';}
+function planetSourceNote(a){const note=a.sourceNotes?.[planet];if(!note||/^\s*\d+(?:\.0+)?\s*$/.test(note)||planet==='cronus'&&a.planets.cronus.shuttles.some(r=>r.note===note))return '';return `<div class="source-note">${icon('book')}<div><strong>Бонусы и заметки</strong><p>${esc(note)}</p></div></div>`;}
 function bonusLevelsModal(){const a=active();if(!a)return;modal(`Найденные уровни · ${esc(a.name)}`,`${intro(`Уровень ${allianceLevel(state,a)}: ${levelDescription(a)}. Найденные уровни не меняют опыт и сохраняются при его начислении.`)}<form data-form="bonusLevels">${field('Дополнительные уровни с карты',number('bonusLevels',a.bonusLevels||0))}${field('Причина',input('reason','','required maxlength="160" placeholder="Найдена награда +1 уровень"'))}${submit('Сохранить найденные уровни')}</form>`);}
-function allianceCard(a){const xp=xpProgress(state,a);return `<button class="alliance-card panel ${a.id===activeId?'selected':''}" data-action="selectAlliance" data-id="${a.id}"><div class="alliance-top"><span class="emblem ${a.color}">${emblem(a.color)}</span><span class="level-pill ${a.color}">Уровень ${xp.level}</span></div><h3>${esc(a.name)}</h3><p>${esc(a.motto)}</p><div class="alliance-resources"><div><span>${icon('coin')} Крышечки</span><strong>${num(a.caps)}</strong><small class="earned-total">${esc(earningsDescription(a))}</small></div><div><span>${icon('spark')} Опыт</span><strong>${num(a.xp)}</strong></div></div><div class="xp-label"><span>${xp.next===undefined?'Максимальный уровень смены':`До уровня ${xp.level+1}`}</span><span>${xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} XP`}</span></div><div class="track ${a.color}"><i style="width:${xp.percent}%"></i></div><div class="role-strip">${roles.map(r=>`<span title="${r.name}: ${a.functions[r.id]} ${r.id==='raiders'?'ОД':'репутации'}"><span class="role-mini ${r.color}">${icon(r.icon)}</span><small class="role-name">${r.name}</small><strong>${a.functions[r.id]} <em>${r.id==='raiders'?'ОД':'реп.'}</em></strong></span>`).join('')}</div><div class="alliance-footer"><span>${icon('people')} ${a.children.length} участников</span><span>Открыть альянс ${icon('arrow')}</span></div></button>`;}
+function allianceCard(a){
+ const xp=xpProgress(state,a);
+ return `<button class="alliance-card panel ${a.id===activeId?'selected':''}" data-action="selectAlliance" data-id="${a.id}" aria-label="Открыть альянс ${esc(a.name)}">
+  <div class="alliance-top"><div class="alliance-identity"><span class="emblem ${a.color}">${emblem(a.color)}</span><h3>${esc(a.name)}</h3></div><span class="level-pill ${a.color}">Уровень ${xp.level}</span></div>
+  <div class="alliance-resources"><div><span>Крышечки</span><strong>${num(a.caps)}</strong></div><div><span>Опыт</span><strong>${num(a.xp)}</strong></div></div>
+  <div class="xp-label"><span>${xp.next===undefined?'Все уровни пройдены':`До уровня ${xp.level+1}`}</span><span>${xp.next===undefined?'':`${num(xp.remaining)} опыта`}</span></div><div class="track ${a.color}"><i style="width:${xp.percent}%"></i></div>
+  <div class="role-strip">${roles.map(r=>`<span title="${r.name}: ${a.functions[r.id]} ${r.id==='raiders'?'ОД':'репутации'}"><span class="role-mini ${r.color}">${icon(r.icon)}</span><small class="role-name">${r.name}</small><strong>${a.functions[r.id]} <em>${r.id==='raiders'?'ОД':'реп.'}</em></strong></span>`).join('')}</div>
+ </button>`;
+}
 function eventRow(e){const a=state.alliances.find(a=>a.id===e.allianceId);const i={reward:'coin',purchase:'box',craft:'wrench',planet:'orbit',interface:'bolt',event:'trophy',inventory:'box',update:'edit'}[e.kind]||'spark';return `<div class="event-row"><span class="event-icon ${a?.color||'blue'}">${icon(i)}</span><div><strong>${esc(e.title)}</strong><p>${esc(e.detail)}</p><small>${esc(a?.name||'Альянс')} · Сол ${e.sol} · ${new Date(e.time).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div></div>`;}
 function searchBox(placeholder){return `<label class="search">${icon('search')}<input id="search" type="search" placeholder="${placeholder}" aria-label="Поиск" value="${esc(search)}"></label>`;}
 function alliancesPage(){const a=active();return `<div class="toolbar">${searchBox('Найти альянс или участника…')}${button(`${icon('plus')} Новый альянс`,'addAlliance')}</div><div class="alliance-tabs">${state.alliances.filter(a=>match(a.name)||a.children.some(c=>match(c.name))).map(a=>`<button class="alliance-tab ${a.id===activeId?'selected':''}" data-action="activate" data-id="${a.id}"><span class="emblem mini ${a.color}">${emblem(a.color)}</span>${esc(a.name)}<span>УР. ${allianceLevel(state,a)}</span></button>`).join('')||'<p class="panel-note">Ничего не найдено</p>'}</div>${a?allianceDetail(a):empty('Ваши альянсы скоро выйдут на связь','Создайте первую команду.',button('Новый альянс','addAlliance'))}`;}
-function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">АЛЬЯНС · ${a.children.length} УЧАСТНИКОВ</span><h2>${esc(a.name)}</h2><p>${esc(a.motto)}</p></div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange')}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple')}${stat('trending',xp.level,'Уровень альянса',levelDescription(a),'blue')}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div>${sourceNotesPanel(a)}<div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('plus')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Участник</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Начислить опыт: ${esc(c.name)}">${icon('plus')}</button></div>`).join('')||'<p class="panel-note">Добавьте участников вашей команды.</p>'}<p class="fine-note">Личный опыт также увеличивает общий опыт альянса.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||'<p class="panel-note">Улучшения пока не установлены.</p>'}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
+function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} участников`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange')}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple')}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue')}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div>${sourceNotesPanel(a)}<div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('plus')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Участник</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Начислить опыт: ${esc(c.name)}">${icon('plus')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список участников пока не заполнен.':'Добавьте участников вашей команды.'}</p>`}<p class="fine-note">Личный опыт также увеличивает общий опыт альянса.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
 function planetTabs(){return `<div class="segment-tabs planet-tabs">${planets.map(p=>`<button class="${planet===p.id?'selected':''}" data-action="planetTab" data-planet="${p.id}">${icon(p.icon)}${p.name}</button>`).join('')}</div>`;}
-function planetsPage(){const a=active(),p=planets.find(p=>p.id===planet);return `${planetTabs()}${a?`<section class="planet-banner panel"><div><span class="eyebrow">${esc(a.name)} · ПЛАНЕТАРНАЯ ОПЕРАЦИЯ</span><h2>${p.name}</h2><p>${p.description}</p></div><span class="planet-ball ${p.id}"></span></section><div class="section-heading"><h2>${planet==='cadia'?'Захваченные аванпосты':planet==='fenris'?'Исследованные территории':'Шаттлы во владении'} <span class="muted-number">${planetRecords(a).length}</span></h2>${button(`${icon('plus')} ${planet==='cadia'?'Захватить аванпост':planet==='fenris'?'Отметить исследование':'Добавить шаттл'}`,'addPlanet')}</div>${planet==='cadia'?`<div class="planet-ap">${icon('bolt')} <span>Очки действий на Кадии</span><strong>${a.planets.cadia.actionPoints}</strong><button class="text-button" data-action="adjustAP">Изменить ${icon('edit')}</button></div>`:''}${planetSourceNote(a)}<div class="planet-records">${planetRecords(a).map(r=>planetRecord(a,r)).join('')||empty('Этот мир ждёт ваших открытий','Запишите первую операцию альянса.')}</div>`:empty('Сначала создайте альянс','Прогресс на каждой планете учитывается отдельно для каждого альянса.',button('Добавить альянс','addAlliance'))}`;}
+function planetsPage(){const a=active(),p=planets.find(p=>p.id===planet);return `${planetTabs()}${a?`<section class="planet-banner panel"><div><span class="eyebrow">${esc(a.name)} · ПЛАНЕТАРНАЯ ОПЕРАЦИЯ</span><h2>${p.name}</h2></div></section><div class="section-heading"><h2>${planet==='cadia'?'Захваченные аванпосты':planet==='fenris'?'Исследованные территории':'Шаттлы во владении'} <span class="muted-number">${planetRecords(a).length}</span></h2>${button(`${icon('plus')} ${planet==='cadia'?'Захватить аванпост':planet==='fenris'?'Отметить исследование':'Добавить шаттл'}`,'addPlanet')}</div>${planet==='cadia'?`<div class="planet-ap">${icon('bolt')} <span>Очки действий на Кадии</span><strong>${a.planets.cadia.actionPoints}</strong><button class="text-button" data-action="adjustAP">Изменить ${icon('edit')}</button></div>`:''}${planetSourceNote(a)}<div class="planet-records">${planetRecords(a).map(r=>planetRecord(a,r)).join('')||empty('Этот мир ждёт ваших открытий','Запишите первую операцию альянса.')}</div>`:empty('Сначала создайте альянс','Прогресс на каждой планете учитывается отдельно для каждого альянса.',button('Добавить альянс','addAlliance'))}`;}
 function planetRecords(a){return planet==='cadia'?a.planets.cadia.outposts:planet==='fenris'?a.planets.fenris.territories:a.planets.cronus.shuttles;}
 function planetRecord(a,r){
  const p=planets.find(p=>p.id===planet);
- const bonus=planet==='cadia'?(r.bonusKnown===false?'<p class="unknown-value">В таблице указано количество аванпостов. Название и бонус нужно уточнить у организатора.</p>':`<div class="bonus-list"><span>${icon('coin')} +${r.bonus.caps} крышечек</span><span>${icon('spark')} +${r.bonus.xp} опыта</span><span>${icon('bolt')} +${r.bonus.actionPoints} ОД на Кадии</span>${r.bonus.toolId?`<span>${icon('wrench')} ${esc(getItem(state,r.bonus.toolId).name)} ×${r.bonus.quantity}</span>`:''}</div>${button(`${icon(r.claimed?'check':'plus')} ${r.claimed?'Бонус начислен':'Начислить бонус'}`,'claimBonus',r.claimed?'completed':'secondary',`data-id="${r.id}" ${r.claimed?'disabled':''}`)}`):`<p>${esc(r.note)||'Запись в журнале экспедиции'}</p>`;
+ const bonus=planet==='cadia'?(r.bonusKnown===false?'<p class="unknown-value">Бонус не указан.</p>':`<div class="bonus-list"><span>${icon('coin')} +${r.bonus.caps} крышечек</span><span>${icon('spark')} +${r.bonus.xp} опыта</span><span>${icon('bolt')} +${r.bonus.actionPoints} ОД на Кадии</span>${r.bonus.toolId?`<span>${icon('wrench')} ${esc(getItem(state,r.bonus.toolId).name)} ×${r.bonus.quantity}</span>`:''}</div>${button(`${icon(r.claimed?'check':'plus')} ${r.claimed?'Бонус начислен':'Начислить бонус'}`,'claimBonus',r.claimed?'completed':'secondary',`data-id="${r.id}" ${r.claimed?'disabled':''}`)}`):`<p>${esc(r.note)||'Запись в журнале экспедиции'}</p>`;
  return `<article class="panel planet-record"><div class="section-heading"><span class="record-icon ${p.color}">${icon(p.icon)}</span><span class="tag">${planet==='cadia'?'ЗАХВАЧЕН':planet==='fenris'?'ИССЛЕДОВАНО':'ВО ВЛАДЕНИИ'}</span><button class="icon-button" data-action="removePlanet" data-id="${r.id}" aria-label="Снять с учёта ${esc(r.name)}">${icon('trash')}</button></div><h3>${esc(r.name)}</h3>${bonus}</article>`;
 }
 function interfacesPage(){return `<div class="interface-grid">${state.alliances.map(a=>{
  const f=a.interface,known=f.maxChargeKnown!==false,pct=known?f.charge/f.maxCharge*100:0;
- return `<article class="interface-card panel"><div class="section-heading"><span class="emblem mini ${a.color}">${emblem(a.color)}</span><span class="tag">${esc(a.name)}</span><button class="icon-button" data-action="editInterface" data-id="${a.id}" aria-label="Редактировать интерфейс ${esc(a.name)}">${icon('edit')}</button></div><div class="charge-ring ${known?'':'charge-unknown'}" style="--charge:${pct}%;--ring-color:var(--${a.color})"><div>${icon('bolt')}<strong>${known?`${Math.round(pct)}<small>%</small>`:num(f.charge)}</strong><span>${known?'ЗАРЯД ИНТЕРФЕЙСА':'ЕДИНИЦ ЗАРЯДА'}</span></div></div><h2>${esc(f.name)}</h2><p>Владелец: альянс ${esc(a.name)}</p><div class="interface-values"><div><span>${icon('bolt')} Заряд</span><strong>${f.charge}${known?`<small> / ${f.maxCharge}</small>`:''}</strong></div><div><span>${icon('mass')} Гравитоны</span><strong>${f.gravitons}</strong></div><div><span>${icon('shield')} Стойкость</span><strong>${f.resilienceKnown===false?'—':f.resilience}</strong></div></div>${!known?'<p class="unknown-value">Максимальная ёмкость не указана</p>':''}${f.resilienceKnown===false?'<p class="unknown-value">Стойкость не указана</p>':''}<p class="graviton-purchases">Гравитонов куплено: ${f.gravitonsPurchased||0} / 10</p>${button(`${icon('edit')} Обновить интерфейс`,'editInterface','secondary',`data-id="${a.id}"`)}</article>`;
- }).join('')||empty('Нет интерфейсов','Интерфейс появится при создании альянса.',button('Создать альянс','addAlliance'))}</div>`;
+ return `<article class="interface-card panel">
+  <div class="section-heading interface-heading"><span class="emblem mini ${a.color}">${emblem(a.color)}</span><h2>${esc(a.name)}</h2><button class="icon-button" data-action="editInterface" data-id="${a.id}" aria-label="Редактировать интерфейс ${esc(a.name)}">${icon('edit')}</button></div>
+  ${f.name!==`Интерфейс «${a.name}»`?`<p class="interface-device">${esc(f.name)}</p>`:''}
+  <div class="interface-values"><div><span>Заряд</span><strong>${num(f.charge)}${known?`<small> / ${num(f.maxCharge)}</small>`:''}</strong></div><div><span>Гравитоны</span><strong>${num(f.gravitons)}</strong></div><div><span>Стойкость</span><strong class="${f.resilienceKnown===false?'metric-unknown':''}">${f.resilienceKnown===false?'Не указана':num(f.resilience)}</strong></div></div>
+  ${known?`<div class="track charge-meter ${a.color}" aria-label="Заряд ${Math.round(pct)} процентов"><i style="width:${pct}%"></i></div>`:'<p class="unknown-value">Ёмкость не указана</p>'}
+  <p class="graviton-purchases">Куплено за смену: ${f.gravitonsPurchased||0} из 10 гравитонов</p>
+  ${button('Обновить показатели','editInterface','secondary',`data-id="${a.id}"`)}
+ </article>`;
+ }).join('')||empty('Нет интерфейсов','Создайте альянс, чтобы добавить его показатели.',button('Создать альянс','addAlliance'))}</div>`;
 }
 function catalogPage(){const category=page==='equipment'?equipmentTab:page,items=allItems(state).filter(i=>i.category===category),a=active();return `${page==='equipment'?`<div class="segment-tabs"><button data-action="equipmentTab" data-tab="equipment" class="${equipmentTab==='equipment'?'selected':''}">${icon('box')} Предметы и способности <span>${allItems(state).filter(i=>i.category==='equipment').length}</span></button><button data-action="equipmentTab" data-tab="tools" class="${equipmentTab==='tools'?'selected':''}">${icon('wrench')} Инструменты <span>${allItems(state).filter(i=>i.category==='tools').length}</span></button></div>`:''}<div class="catalog-context"><span>${icon('coin')} Баланс ${a?`альянса <strong>${esc(a.name)}</strong>`:'не выбран'}: <b>${a?num(a.caps):'—'}</b> крышечек</span><div>${button(`${icon('box')} Инвентарь`,'inventory')}${button(`${icon('plus')} Новый товар`,'addItem')}</div></div><div class="toolbar">${searchBox('Название, эффект или рецепт…')}<div class="filter-chips">${[['all','Все'],['owned','Во владении'],['affordable','Можно купить']].map(([id,title])=>`<button class="${catalogFilter===id?'selected':''}" data-action="catalogFilter" data-filter="${id}">${title}</button>`).join('')}</div></div>${category==='tools'?'<div class="info-note">Число у инструмента — его уровень. При крафте ингредиенты расходуются.</div>':''}<div class="catalog-grid">${items.filter(i=>match(i.name)||match(i.effect)||match(i.recipeText)).filter(i=>catalogFilter==='owned'?a&&owned(state,a,i)>0:catalogFilter==='affordable'?a&&i.price!==null&&a.caps>=i.price:true).map(i=>itemCard(i,a)).join('')||empty('По этому курсу ничего не найдено','Измените поиск или добавьте свой товар.')}</div>`;}
-function itemCard(i,a){const have=a?owned(state,a,i):0;return `<article class="item-card panel"><div class="item-card-top"><span class="item-icon ${i.category==='upgrades'?'blue':i.category==='access'?'orange':i.category==='tools'?'green':'purple'}">${icon(categories[i.category].icon)}</span><span class="tag">${i.category==='tools'?`УРОВЕНЬ ${i.toolLevel}`:categories[i.category].name.toUpperCase()}</span><button class="icon-button" data-action="editItem" data-id="${i.id}" aria-label="Настроить ${esc(i.name)}">${icon('settings')}</button></div><h3>${esc(i.name)}</h3><p class="item-effect">${esc(i.effect)}</p>${i.recipeText&&i.recipeText!=='-'?`<div class="recipe-preview"><span>${icon('wrench')} КРАФТ</span><p>${esc(i.recipeText).replace(/\n/g,'<br>')}</p>${i.recipeIssue||i.needsRecipeReview&&!i.recipeConfirmed?'<small>Состав требует подтверждения</small>':''}</div>`:''}<div class="item-bottom"><div class="price">${icon('coin')}${i.price===null?'<span class="unknown-price">Цена не задана</span>':`<strong>${num(i.price)}</strong><span>крышечек</span>`}</div><span class="owned-label ${have?'has-item':''}">${have?`${icon('check')} ${i.kind==='graviton'?`${have} гравитонов`:i.category==='upgrades'?'Установлено':i.category==='access'?'Доступ открыт':`Есть: ${have}`}`:''}</span></div><div class="item-actions">${button(`${icon('plus')} ${!isAdmin()||i.price===null?'Подробнее':'Купить'}`,'item','secondary',`data-id="${i.id}"`)}${i.recipe||i.recipeIssue?button(`${icon('wrench')} Крафт`,'craft','ghost',`data-id="${i.id}"`):''}</div></article>`;}
+function itemCard(i,a){
+ const have=a?owned(state,a,i):0,hasRecipe=i.recipeText&&i.recipeText!=='-',review=i.recipeIssue||i.needsRecipeReview&&!i.recipeConfirmed;
+ return `<article class="item-card panel"><div class="item-card-top"><h3>${esc(i.name)}</h3><div class="item-card-controls">${i.category==='tools'?`<span class="tag">Уровень ${i.toolLevel}</span>`:''}<button class="icon-button" data-action="editItem" data-id="${i.id}" aria-label="Настроить ${esc(i.name)}">${icon('settings')}</button></div></div>
+  <p class="item-effect">${esc(i.effect)}</p>
+  ${hasRecipe?`<details class="recipe-preview"><summary>Рецепт крафта${review?'<small> · уточнить состав</small>':''}</summary><p>${esc(i.recipeText).replace(/\n/g,'<br>')}</p>${i.recipeIssue?`<small>${esc(i.recipeIssue)}</small>`:review?'<small>Перед крафтом организатор подтверждает состав.</small>':''}</details>`:''}
+  <div class="item-bottom"><div class="price">${i.price===null?'<span class="unknown-price">Цена не задана</span>':`<strong>${num(i.price)}</strong><span>крышечек</span>`}</div><span class="owned-label ${have?'has-item':''}">${have?`${icon('check')} ${i.kind==='graviton'?`${have} гравитонов`:i.category==='upgrades'?'Установлено':i.category==='access'?'Доступ открыт':`Есть: ${have}`}`:''}</span></div>
+  <div class="item-actions">${button(!isAdmin()||i.price===null?'Подробнее':'Купить','item','secondary',`data-id="${i.id}"`)}${i.recipe||i.recipeIssue?button('Крафт','craft','ghost',`data-id="${i.id}"`):''}</div>
+ </article>`;
+}
 function historyPage(){return `<div class="toolbar">${searchBox('Найти событие или альянс…')}<div class="toolbar-actions">${button(`${icon('trophy')} Результаты мероприятия`,'eventResults')}${button(`${icon('download')} Экспорт`,'export')}</div></div><div class="panel history-panel">${state.events.filter(e=>match(e.title)||match(e.detail)||match(state.alliances.find(a=>a.id===e.allianceId)?.name||'')).map(eventRow).join('')||empty('Тишина в эфире','Запишите первые результаты вашей смены.')}</div>`;}
 // Modal forms use the same model functions as automated domain tests.
 function modal(title,content){const d=document.querySelector('#modal');d.innerHTML=`<div class="modal-header"><h2>${title}</h2><button class="icon-button" data-action="close" aria-label="Закрыть">${icon('close')}</button></div>${content}`;applyAccessControls();d.showModal();}
@@ -606,14 +1212,14 @@ function grantModal(id){if(!requireAlliance())return;const i=getItem(state,id);m
 function inventoryModal(){if(!requireAlliance())return;const a=active(),items=Object.entries(a.inventory).map(([id,n])=>({item:getItem(state,id),n}));modal(`Инвентарь · ${esc(a.name)}`,`${intro('Предметы и инструменты альянса. При крафте ингредиенты списываются автоматически.')}<div class="inventory-list">${items.map(({item:i,n})=>`<div class="inventory-row"><span class="item-icon ${i.category==='tools'?'green':'purple'}">${icon(i.category==='tools'?'wrench':'box')}</span><div><strong>${esc(i.name)}</strong><small>${i.category==='tools'?`Уровень ${i.toolLevel}`:'Предмет / способность'}</small></div><b>×${n}</b><button class="icon-button" data-action="spendItem" data-id="${i.id}" aria-label="Списать ${esc(i.name)}">${icon('trash')}</button></div>`).join('')||'<p class="panel-note">Инвентарь пуст. Купите или выдайте первые предметы.</p>'}</div>`);}
 function spendModal(id){const i=getItem(state,id);modal(`Списать · ${esc(i.name)}`,`<form data-form="spend" data-id="${id}">${field('Количество',number('quantity',1,1,owned(state,active(),i)))}${field('Причина',input('reason','','required maxlength="160" placeholder="Использован в игре / потерян"'))}${submit('Подтвердить списание')}</form>`);}
 function addItemModal(){const category=page==='equipment'?equipmentTab:categories[page]?page:'equipment';modal('Новый товар смены',`<form data-form="addItem">${field('Раздел',`<select name="category">${Object.entries(categories).map(([id,c])=>`<option value="${id}" ${id===category?'selected':''}>${c.name}</option>`).join('')}</select>`)}${field('Название',input('name','','maxlength="100" required'))}${field('Цена (пусто — не задана)',input('price','','type="number" min="0" max="1000000000"'))}${field('Эффект',`<textarea name="effect" rows="3" required maxlength="2000"></textarea>`)}${field('Уровень, если это инструмент',number('toolLevel',1,1,999))}${submit('Добавить товар')}</form>`);}
-function settingsModal(){modal('Правила вашей смены',`<form data-form="settings">${field('Название смены',input('name',state.shift.name,'required maxlength="80"'))}<div class="two-fields">${field('Текущий сол',number('day',state.shift.day,1,365))}${field('Солов в смене',number('duration',state.shift.duration,1,365))}</div>${field('Пороги опыта для уровней 1, 2, 3…',input('levelThresholds',state.rules.levelThresholds.join(', '),'required'))}${intro('Пороги начинаются с 0 и растут: например 0, 500, 1000. Текущая шкала — пример для демосмены; задайте вашу. Уровни всех альянсов пересчитаются автоматически.')}<label class="checkbox-field"><input name="craftCostsCaps" type="checkbox" ${state.rules.craftCostsCaps?'checked':''}> При крафте также списывать цену в крышечках</label>${intro('Ингредиенты крафта всегда расходуются. Покупка за крышечки и крафт доступны как отдельные операции. При переходе к другому солу список купленных доступов очищается, история покупок сохраняется.')}${submit('Сохранить правила')}</form><div class="settings-backup"><h3>Сохранение и перенос</h3>${intro('Изменения сохраняются на сервере и видны зрителям. Сохраняйте резервные копии перед переносом или очисткой данных.')}<div class="backup-actions">${button(`${icon('download')} Экспорт JSON`,'export')}${button('Загрузить копию','import')}${button('HTML для зрителей','downloadSnapshot')}${hasLegacy?button('Копия прежнего прототипа','exportLegacy','ghost'):''}</div><input type="file" id="import-file" accept=".json,application/json" hidden><button class="text-button reset-link" data-action="reset">Начать чистую космическую смену</button></div>`);}
+function settingsModal(){modal('Правила вашей смены',`<form data-form="settings">${field('Название смены',input('name',state.shift.name,'required maxlength="80"'))}<div class="two-fields">${field('Текущий сол',number('day',state.shift.day,1,365))}${field('Солов в смене',number('duration',state.shift.duration,1,365))}</div>${field('Пороги опыта для уровней 1, 2, 3…',input('levelThresholds',state.rules.levelThresholds.join(', '),'required'))}${intro('Пороги начинаются с 0 и растут: например 0, 500, 1000. Укажите пороги вашей смены. Уровни за опыт пересчитаются, найденные на карте уровни сохранятся.')}<label class="checkbox-field"><input name="craftCostsCaps" type="checkbox" ${state.rules.craftCostsCaps?'checked':''}> При крафте также списывать цену в крышечках</label>${intro('Ингредиенты крафта всегда расходуются. Покупка за крышечки и крафт доступны как отдельные операции. При переходе к другому солу список купленных доступов очищается, история покупок сохраняется.')}${submit('Сохранить правила')}</form><div class="settings-backup"><h3>Сохранение и перенос</h3>${intro('Изменения сохраняются на сервере и видны зрителям. Сохраняйте резервные копии перед переносом или очисткой данных.')}<div class="backup-actions">${button(`${icon('download')} Экспорт JSON`,'export')}${button('Загрузить копию','import')}${button('HTML для зрителей','downloadSnapshot')}${hasLegacy?button('Копия прежнего прототипа','exportLegacy','ghost'):''}</div><input type="file" id="import-file" accept=".json,application/json" hidden><button class="text-button reset-link" data-action="reset">Начать чистую космическую смену</button></div>`);}
 function downloadJSON(data,name){const blob=new Blob([typeof data==='string'?data:JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Резервная копия выгружена.');}
-function exportData(){downloadJSON(state,'orbita-backup.json');}
+function exportData(){downloadJSON(state,'genesis-backup.json');}
 async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmin()&&!readActions.has(action))throw Error('Редактирование доступно только организатору.');
  if(action==='noop')return;
  if(action==='login')return loginModal();
  if(action==='logout'){await api('/api/logout',{method:'POST',body:'{}'});auth={role:'viewer',configured:true};render();toast('Вы вышли. Теперь доступен только просмотр.');return;}
- if(action==='downloadSnapshot'){const a=document.createElement('a');a.href='/readonly.html';a.download='orbita-readonly.html';a.click();return;}
+ if(action==='downloadSnapshot'){const a=document.createElement('a');a.href='/readonly.html';a.download='genesis-readonly.html';a.click();return;}
  if(action==='close')document.querySelector('#modal').close();
  if(action==='menu')document.querySelector('.sidebar').classList.toggle('mobile-open');
  if(action==='settings')settingsModal();

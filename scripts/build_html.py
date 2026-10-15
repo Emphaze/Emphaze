@@ -32,9 +32,9 @@ html = '''<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10131f">
-  <meta name="description" content="Орбита — прогресс альянсов в космической лагерной смене.">
-  <title>Орбита · Космическая одиссея</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23232b40'/%3E%3Ccircle cx='20' cy='20' r='8' fill='%23b2c3eb'/%3E%3Cellipse cx='20' cy='20' rx='17' ry='5' transform='rotate(-30 20 20)' fill='none' stroke='%23b2c3eb' stroke-width='2'/%3E%3C/svg%3E">
+  <meta name="description" content="Космический корабль Генезис — прогресс альянсов, ресурсы и исследования лагерной смены.">
+  <title>Космический корабль Генезис</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2210%22%20fill%3D%22%23171e2b%22%2F%3E%3Cg%20transform%3D%22translate%288%208%29%22%20fill%3D%22none%22%20stroke%3D%22%23b8c9e9%22%20stroke-width%3D%221.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%204c3-2%207-1%207-1s1%204-1%207l-6%207-7-7ZM7%2010%203%2011v6l4-1m7%201-1%204h6l1-4M7%2018l-3%203m1-5-3%203m6%201-3%203%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%228%22%20r%3D%222%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
   <!-- Standalone site: all styles, fonts, artwork and logic are included. -->
   <style>
 ''' + css + '''

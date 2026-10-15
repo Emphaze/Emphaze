@@ -18,7 +18,7 @@ export function createLocalServer({database,env={},html=readFileSync(resolve(roo
   else if(url.pathname==='/health')response=new Response('ok');
   else if(['GET','HEAD'].includes(req.method)&&['/','/index.html','/readonly.html'].includes(url.pathname)){
    let page=html;if(url.pathname==='/readonly.html')page=await snapshotPage(page,database);response=await securePage(page);
-   if(url.pathname==='/readonly.html')response.headers.set('Content-Disposition','attachment; filename="orbita-readonly.html"');
+   if(url.pathname==='/readonly.html')response.headers.set('Content-Disposition','attachment; filename="genesis-readonly.html"');
   }else response=new Response('Not found',{status:404});
   res.writeHead(response.status,Object.fromEntries(response.headers));res.end(req.method==='HEAD'?undefined:Buffer.from(await response.arrayBuffer()));
  }catch{res.writeHead(500,{'Content-Type':'application/json'});res.end(JSON.stringify({error:'Сервер не смог выполнить запрос.'}));}});

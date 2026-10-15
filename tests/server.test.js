@@ -67,7 +67,7 @@ test('SQLite survives server restarts; internal source and database paths stay p
 });
 test('viewer download is a standalone snapshot of current server data',async t=>{
  const {call,login}=await fixture(t),auth=await login(),saved=await(await call('/api/state')).json();saved.state.shift.name='Копия <без скриптов>';await call('/api/state',{method:'PUT',body:saved,...auth});
- const response=await call('/readonly.html'),html=await response.text();assert.equal(response.status,200);assert.match(response.headers.get('content-disposition'),/orbita-readonly.html/);assert.match(html,/data-snapshot=/);assert.match(html,/Копия &lt;без скриптов&gt;/);assert.ok(!html.includes(auth.csrf));
+ const response=await call('/readonly.html'),html=await response.text();assert.equal(response.status,200);assert.match(response.headers.get('content-disposition'),/genesis-readonly.html/);assert.match(html,/data-snapshot=/);assert.match(html,/Копия &lt;без скриптов&gt;/);assert.ok(!html.includes(auth.csrf));
 });
 
 test('changing the admin password revokes all previous sessions',async t=>{

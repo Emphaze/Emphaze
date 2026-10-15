@@ -7,7 +7,7 @@ export default {
   if(!['/','/index.html','/readonly.html'].includes(url.pathname)||!['GET','HEAD'].includes(request.method))return new Response('Not found',{status:404});
   const asset=await env.ASSETS.fetch(new Request(`${url.origin}/index.html`));if(!asset.ok)return asset;
   let html=await asset.text();if(url.pathname==='/readonly.html')html=await snapshotPage(html,env.ORBITA_DB);
-  const response=await securePage(html);if(url.pathname==='/readonly.html')response.headers.set('Content-Disposition','attachment; filename="orbita-readonly.html"');
+  const response=await securePage(html);if(url.pathname==='/readonly.html')response.headers.set('Content-Disposition','attachment; filename="genesis-readonly.html"');
   return request.method==='HEAD'?new Response(null,{headers:response.headers}):response;
  }
 };
