@@ -107,18 +107,17 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     page.locator('[name=name]').fill('«Комета»')
     submit()
     assert len(first_alliance()['planets']['cronus']['shuttles']) == 2
-    # Charge validation, larger capacity, and gravitational mass.
+    # Only charge and mass are editable; legacy capacity does not limit charge.
     go('interface')
+    assert page.locator('.interface-card').first.locator('.interface-values > div').count() == 2
     page.locator('[data-action=editInterface][data-id=alliance-1]').first.click()
+    assert page.locator('dialog [name=maxCharge],dialog [name=resilience],dialog [name=gravitonsPurchased]').count() == 0
     page.locator('[name=charge]').fill('150')
-    submit(False)
-    assert page.locator('.form-error').inner_text()
-    page.locator('[name=maxCharge]').fill('200')
     page.locator('[name=gravitons]').fill('9')
-    page.locator('[name=gravitonsPurchased]').fill('9')
     submit()
     assert first_alliance()['interface']['charge'] == 150
-    assert first_alliance()['interface']['maxCharge'] == 200
+    assert first_alliance()['interface']['gravitons'] == 9
+    assert page.locator('.interface-card').first.locator('.interface-values > div').first.locator('strong').inner_text() == '150'
     # Upgrade purchase and craft use distinct operations.
     go('upgrades')
     assert page.locator('.item-card').count() == 27
@@ -137,11 +136,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     item_action('item','upgrade-27')
     submit()
     assert first_alliance()['interface']['gravitons'] == 10
-    assert first_alliance()['interface']['gravitonsPurchased'] == 10
-    item_action('item','upgrade-27')
-    submit(False)
-    assert 'Максимум' in page.locator('.form-error').inner_text()
-    close()
+    assert first_alliance()['interface']['gravitonsPurchased'] == 1
     # Unknown equipment prices can be configured, and the edited price is used.
     go('equipment')
     assert page.locator('.item-card').count() == 42
@@ -169,6 +164,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     # Tool levels, crafting chain and the unresolved Форпост are visible.
     page.locator('[data-action=equipmentTab][data-tab=tools]').click()
     assert page.locator('.item-card').count() == 30
+    assert page.locator('.tool-level-group').evaluate_all('(groups) => groups.map(group => Number(group.dataset.toolLevel))') == list(range(1,14))
     item_action('craft','tool-6')
     submit()
     assert first_alliance()['inventory']['tool-6'] == 4
@@ -182,6 +178,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     # Search, configurable XP thresholds and daily access purchase.
     page.locator('#search').fill('Кеплер')
     assert page.locator('.item-card').count() == 1
+    assert page.locator('.tool-level-group').get_attribute('data-tool-level') == '9'
     settings()
     page.locator('[name=levelThresholds]').fill('0, 1000, 2000, 3000')
     submit()

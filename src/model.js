@@ -30,7 +30,7 @@ export function createAlliance(name,motto='К новым мирам — вмес
  return { id:uid(),name:text(name,'Название',60),motto:text(motto,'Девиз',140),color,caps:0,earnedCaps:0,xp:0,functions:Object.fromEntries(roles.map(r=>[r.id,0])), interface:{name:`Интерфейс «${name.trim()}»`,charge:0,maxCharge:100,gravitons:0,resilience:0}, inventory:{},upgrades:[],access:[],children:[],planets:{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}} };
 }
 export function initialState(empty=false) {
- const state={version:2,shift:{name:'Космическая одиссея',day:7,duration:21},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
+ const state={version:2,shift:{name:'Космическая одиссея',day:7,duration:11},rules:{levelThresholds:[0,500,1000,1500,2000,2500,3000,4000,5000,7000],consumeIngredients:true,craftCostsCaps:false},alliances:[],customItems:[],itemOverrides:{},events:[]};
  if(empty)return state;
  const rows=[['Орион','Первым открывать неизведанное','blue',2480,1840,[34,28,19,22,6]],['Андромеда','Знание — наша сверхсила','purple',1920,1620,[21,38,30,25,5]],['Сириус','Дальше звёзд. Ближе друг к другу','orange',1650,1450,[31,20,27,18,8]],['Пегас','Вселенная начинается с команды','green',1380,1280,[24,22,35,20,4]]];
  rows.forEach(([name,motto,color,caps,xp,values],i)=>{
@@ -44,7 +44,7 @@ export function initialState(empty=false) {
  });
  log(state,state.alliances[0].id,'Награда за космическую эстафету','Начислено 180 крышечек и 90 опыта','reward');
  log(state,state.alliances[1].id,'Открытие на Фенрисе','Исследован новый сектор','planet');
- log(state,state.alliances[2].id,'Сигнал интерфейса','Заряд восстановлен до 86 / 100','interface');
+ log(state,state.alliances[2].id,'Сигнал интерфейса','Заряд восстановлен до 86','interface');
  return state;
 }
 export function getAlliance(state,id) {const a=state.alliances.find(a=>a.id===id);if(!a)throw Error('Альянс не найден.');return a;}
@@ -55,11 +55,11 @@ export function adjustResource(state,{allianceId,resource,amount,reason,childId}
  const group=roles.find(r=>r.id===resource);if(!group&&!['caps','xp','charge','resilience','cadiaAP'].includes(resource))throw Error('Неизвестный показатель.');
  const child=childId?a.children.find(c=>c.id===childId):null;if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт начисляется участнику выбранного альянса.');
  let current=group?a.functions[resource]:resource==='charge'||resource==='resilience'?a.interface[resource]:resource==='cadiaAP'?a.planets.cadia.actionPoints:a[resource];
- const next=checkSum(current,delta,'Итоговый показатель');if(resource==='charge'&&next>a.interface.maxCharge&&a.interface.maxChargeKnown!==false)throw Error('Заряд не может превышать ёмкость интерфейса.');
+ const next=checkSum(current,delta,'Итоговый показатель');
  const earned=resource==='caps'&&delta>0?checkSum(a.earnedCaps,delta,'Заработанные крышечки'):a.earnedCaps;
  const childXP=child?checkSum(child.xp,delta,'Опыт участника'):null;
  if(group)a.functions[resource]=next;else if(resource==='charge'||resource==='resilience')a.interface[resource]=next;else if(resource==='cadiaAP')a.planets.cadia.actionPoints=next;else a[resource]=next;
- if(resource==='charge'&&a.interface.maxChargeKnown===false)a.interface.maxCharge=Math.max(a.interface.maxCharge,next);
+ if(resource==='charge'){if(next>a.interface.maxCharge)a.interface.maxChargeKnown=false;a.interface.maxCharge=Math.max(1,a.interface.maxCharge,next);}
  if(child)child.xp=childXP;a.earnedCaps=earned;
  const labels={caps:'Крышечки',xp:'Опыт',charge:'Заряд',resilience:'Стойкость',cadiaAP:'ОД на Кадии',...Object.fromEntries(roles.map(r=>[r.id,r.name==='Райдеры'?'Райдеры · ОД':`${r.name} · репутация`]))};
  log(state,allianceId,why,`${child?`${child.name} · `:''}${labels[resource]}: ${delta>0?'+':''}${delta}`,'reward');
@@ -70,11 +70,17 @@ export function recordEventResults(state,{name,results}) {
  checked.forEach(({a,caps,xp,place,newCaps,newEarned,newXP})=>{a.caps=newCaps;a.earnedCaps=newEarned;a.xp=newXP;log(state,a.id,title,`${place}-е место · +${caps} крышечек · +${xp} опыта`,'event');});
 }
 export function updateInterface(state,id,values) {
- const a=getAlliance(state,id),name=text(values.name,'Название интерфейса',80),charge=integer(values.charge,'Заряд'),gravitons=integer(values.gravitons,'Гравитоны'),resilience=integer(values.resilience,'Стойкость'),gravitonsPurchased=values.gravitonsPurchased===undefined?(a.interface.gravitonsPurchased??0):integer(values.gravitonsPurchased,'Куплено гравитонов',0,10);
- const maxChargeKnown=values.maxChargeKnown===undefined?true:values.maxChargeKnown,resilienceKnown=values.resilienceKnown===undefined?true:values.resilienceKnown;
- if(typeof maxChargeKnown!=='boolean'||typeof resilienceKnown!=='boolean')throw Error('Укажите, известны ли ёмкость и стойкость интерфейса.');
- let maxCharge=integer(values.maxCharge,'Ёмкость',1);if(!maxChargeKnown)maxCharge=Math.max(maxCharge,charge);else if(charge>maxCharge)throw Error('Заряд не может превышать ёмкость интерфейса.');
- a.interface={name,maxCharge,charge,gravitons,resilience,gravitonsPurchased,maxChargeKnown,resilienceKnown};log(state,id,'Обновлён интерфейс',`Заряд ${charge}${maxChargeKnown?`/${maxCharge}`:' · ёмкость не указана'} · гравитоны ${gravitons} · куплено ${gravitonsPurchased}/10 · стойкость ${resilienceKnown?resilience:'не указана'}`,'interface');
+ const a=getAlliance(state,id),name=text(values.name,'Название интерфейса',80),charge=integer(values.charge,'Заряд'),gravitons=integer(values.gravitons,'Гравитоны');
+ const legacyCapacity=values.maxCharge!==undefined,resilienceProvided=values.resilience!==undefined;
+ const resilience=resilienceProvided?integer(values.resilience,'Стойкость'):a.interface.resilience;
+ const gravitonsPurchased=values.gravitonsPurchased===undefined?(a.interface.gravitonsPurchased??0):integer(values.gravitonsPurchased,'Куплено гравитонов',0,10);
+ if((values.maxChargeKnown!==undefined&&typeof values.maxChargeKnown!=='boolean')||(values.resilienceKnown!==undefined&&typeof values.resilienceKnown!=='boolean'))throw Error('Укажите, известны ли ёмкость и стойкость интерфейса.');
+ const maxChargeKnown=legacyCapacity?(values.maxChargeKnown??true):false;
+ const resilienceKnown=values.resilienceKnown??(resilienceProvided?true:a.interface.resilienceKnown);
+ let maxCharge=legacyCapacity?integer(values.maxCharge,'Ёмкость',1):Math.max(1,a.interface.maxCharge,charge);
+ if(!maxChargeKnown)maxCharge=Math.max(maxCharge,charge);else if(charge>maxCharge)throw Error('Заряд не может превышать ёмкость интерфейса.');
+ a.interface={...a.interface,name,maxCharge,charge,gravitons,resilience,gravitonsPurchased,maxChargeKnown,resilienceKnown};
+ log(state,id,'Обновлён интерфейс',`Заряд ${charge} · гравитоны ${gravitons}`,'interface');
 }
 export function addPlanetRecord(state,id,planet,values) {
  const a=getAlliance(state,id);if(!planets.some(p=>p.id===planet))throw Error('Планета не найдена.');const name=text(values.name,'Название',80);

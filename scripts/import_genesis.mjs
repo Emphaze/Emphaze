@@ -191,7 +191,7 @@ export function convertGenesisWorkbook(workbook, { now } = {}) {
   for (const name of rows[sheet].keys()) if (!rows['Альянсы'].has(name)) fail(`«${sheet}»: неизвестный альянс «${name}», которого нет в листе «Альянсы».`);
  }
  const state = initialState(true);
- state.shift = { name: 'Генезис', day: 1, duration: 21 };
+ state.shift = { name: 'Генезис', day: 1, duration: 11 };
  state.rules.levelThresholds = Array.from({ length: 100 }, (_, index) => index * 100);
  const allianceReport = [];
  for (const [name, { row }] of rows['Альянсы']) {
@@ -221,8 +221,7 @@ export function convertGenesisWorkbook(workbook, { now } = {}) {
   const raw = { cadia: cell(sub, 'N', 'Подфункции', false), fenris: cell(sub, 'P', 'Подфункции', false), cronus: cell(sub, 'R', 'Подфункции', false) };
   alliance.sourceNotes = { level: sourceLevel };
   for (const [planet, value] of Object.entries(raw)) if (hasContent(value)) alliance.sourceNotes[planet] = value;
-  alliance.sourceNotes.missing = 'В таблице не указаны: исторически заработанные крышечки; стойкость; участники; полный инвентарь, улучшения и полученные доступы; количество ранее купленных гравитонов; очки действий на Кадии.';
-  if (!alliance.interface.maxChargeKnown) alliance.sourceNotes.missing += ' Максимальная ёмкость интерфейса неизвестна.';
+  alliance.sourceNotes.missing = 'В таблице не указаны: исторически заработанные крышечки; участники; полный инвентарь, улучшения и полученные доступы; очки действий на Кадии.';
   importPlanets(alliance, raw);
   if (itemKey(name) === 'гагарина' && /расщепитель\s*1(?:\D|$)/iu.test(sourceLevel)) {
    const splitter = catalog.find(item => item.category === 'upgrades' && item.name === 'Лазерный расщепитель I');
@@ -242,7 +241,7 @@ export function convertGenesisWorkbook(workbook, { now } = {}) {
   summary: { alliances: state.alliances.length, catalogEntries: catalogReport.sourceItems.length, recipesChecked: catalogReport.counts.upgrades + catalogReport.counts.equipment + catalogReport.counts.tools, importedUpgrades: allianceReport.reduce((sum, alliance) => sum + alliance.importedUpgrades.length, 0) },
   defaults: [
    { field: 'shift.day', value: 1, reason: 'Текущий сол в источнике не указан.' },
-   { field: 'shift.duration', value: 21, reason: 'Продолжительность смены в источнике не указана.' },
+   { field: 'shift.duration', value: 11, reason: 'По уточнению организатора: путешествие длится 11 солов.' },
    { field: 'rules.levelThresholds', value: '0, 100, …, 9900', reason: 'По уточнению организатора: шаг уровня 100 опыта; находки +уровень учтены отдельным бонусом.' },
    { field: 'interface.gravitonsPurchased', value: 0, reason: 'Счётчик покупок ведётся с момента импорта; прошлое количество покупок неизвестно. Общего лимита гравитонов нет.' },
   ],

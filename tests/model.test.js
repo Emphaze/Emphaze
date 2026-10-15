@@ -6,7 +6,7 @@ const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
 test('the full supplied catalog and demo state satisfy storage validation',()=>{
- assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));
+ assert.equal(catalog.filter(i=>i.category==='access').length,11);assert.equal(catalog.filter(i=>i.category==='upgrades').length,27);assert.equal(catalog.filter(i=>i.category==='equipment').length,42);assert.equal(catalog.filter(i=>i.category==='tools').length,30);assert.ok(validateState(initialState()));assert.ok(validateState(initialState(true)));assert.equal(initialState().shift.duration,11);assert.equal(initialState(true).shift.duration,11);
 });
 test('caps balance and total earned are independent from experience',()=>{
  const {state,a}=setup(),xp=a.xp,balance=a.caps,earned=a.earnedCaps;
@@ -48,6 +48,15 @@ test('interface charge constraints remain atomic and graviton mass has no ten-un
  updateInterface(state,id,{name:'Астра',charge:90,maxCharge:150,gravitons:52,gravitonsPurchased:10,resilience:40});assert.equal(a.interface.gravitons,52);assert.ok(validateState(state));
  unchangedOnError(state,()=>updateInterface(state,id,{name:'Астра',charge:90,maxCharge:150,gravitons:52,gravitonsPurchased:11,resilience:40}));
  updateInterface(state,id,{name:'Астра',charge:100,maxCharge:150,gravitons:53,resilience:45});assert.equal(a.interface.gravitonsPurchased,10);assert.equal(a.interface.maxChargeKnown,true);assert.equal(a.interface.resilienceKnown,true);
+ assert.equal(state.events[0].detail,'Заряд 100 · гравитоны 53');
+});
+test('simple interface edits preserve legacy data and accept charge without a capacity limit',()=>{
+ const {state,a}=setup();updateInterface(state,id,{name:'Прежний',charge:100,maxCharge:500,gravitons:52,gravitonsPurchased:7,resilience:45,resilienceKnown:false});
+ updateInterface(state,id,{name:'Новый',charge:750,gravitons:55});
+ assert.deepEqual(a.interface,{name:'Новый',charge:750,maxCharge:750,maxChargeKnown:false,gravitons:55,gravitonsPurchased:7,resilience:45,resilienceKnown:false});
+ assert.equal(state.events[0].detail,'Заряд 750 · гравитоны 55');
+ updateInterface(state,id,{name:'Новый',charge:0,gravitons:55});assert.equal(a.interface.charge,0);assert.equal(a.interface.maxCharge,750);assert.ok(validateState(state));
+ for(const values of [{charge:-1},{charge:0.5},{charge:MAX_NUMBER+1},{gravitons:-1},{maxChargeKnown:'false'}])unchangedOnError(state,()=>updateInterface(state,id,{name:'Новый',charge:100,gravitons:55,...values}));
 });
 test('only graviton purchases count toward ten per shift and manual grants remain possible',()=>{
  const {state,a}=setup();a.interface.gravitons=42;const balance=a.caps;
@@ -55,16 +64,18 @@ test('only graviton purchases count toward ten per shift and manual grants remai
  assert.equal(a.interface.gravitons,52);assert.equal(a.interface.gravitonsPurchased,10);assert.equal(a.caps,balance-2000);
  unchangedOnError(state,()=>purchase(state,id,'upgrade-27'),/10 покупок/);
  grantItem(state,id,'upgrade-27',3,'Найдены на карте');assert.equal(a.interface.gravitons,55);assert.equal(a.interface.gravitonsPurchased,10);
- const settings={name:'Та же смена',day:8,duration:21,levelThresholds:state.rules.levelThresholds.join(','),craftCostsCaps:false};updateSettings(state,settings);assert.equal(a.interface.gravitonsPurchased,10);
+ const settings={name:'Та же смена',day:8,duration:11,levelThresholds:state.rules.levelThresholds.join(','),craftCostsCaps:false};updateSettings(state,settings);assert.equal(a.interface.gravitonsPurchased,10);
  a.interface.gravitons=MAX_NUMBER;unchangedOnError(state,()=>grantItem(state,id,'upgrade-27',1,'За границей допустимого числа'));assert.ok(validateState(state));
 });
-test('unknown interface capacity expands only its placeholder until an organizer supplies actual values',()=>{
+test('charge awards expand imported or legacy capacity placeholders without an upper cap',()=>{
  const {state,a}=setup();updateInterface(state,id,{name:'Импорт',charge:150,maxCharge:100,maxChargeKnown:false,gravitons:52,resilience:0,resilienceKnown:false});
  assert.equal(a.interface.maxCharge,150);assert.equal(a.interface.maxChargeKnown,false);assert.equal(a.interface.resilienceKnown,false);assert.equal(a.interface.gravitonsPurchased,0);
  adjustResource(state,{allianceId:id,resource:'charge',amount:20,reason:'Подзарядка'});assert.equal(a.interface.charge,170);assert.equal(a.interface.maxCharge,170);assert.equal(a.interface.maxChargeKnown,false);assert.ok(validateState(state));
  unchangedOnError(state,()=>updateInterface(state,id,{name:'Импорт',charge:170,maxCharge:100,maxChargeKnown:true,gravitons:52,resilience:0}));
  updateInterface(state,id,{name:'Проверен',charge:170,maxCharge:200,gravitons:52,resilience:60});assert.equal(a.interface.maxChargeKnown,true);assert.equal(a.interface.resilienceKnown,true);
- unchangedOnError(state,()=>adjustResource(state,{allianceId:id,resource:'charge',amount:31,reason:'Слишком много'}));
+ adjustResource(state,{allianceId:id,resource:'charge',amount:31,reason:'Дополнительный заряд'});assert.equal(a.interface.charge,201);assert.equal(a.interface.maxCharge,201);assert.equal(a.interface.maxChargeKnown,false);assert.ok(validateState(state));
+ adjustResource(state,{allianceId:id,resource:'charge',amount:-200,reason:'Расход заряда'});assert.equal(a.interface.charge,1);assert.equal(a.interface.maxCharge,201);
+ unchangedOnError(state,()=>adjustResource(state,{allianceId:id,resource:'charge',amount:-2,reason:'Недопустимый расход'}));
 });
 test('insufficient currency, unknown prices and duplicate upgrades do not mutate state',()=>{
  const {state,a}=setup();unchangedOnError(state,()=>purchase(state,id,'equip-1'),/цену/);a.caps=100;unchangedOnError(state,()=>purchase(state,id,'upgrade-1'),/Недостаточно/);a.caps=1000;purchase(state,id,'upgrade-1');unchangedOnError(state,()=>purchase(state,id,'upgrade-1'),/уже установлено/);
@@ -90,8 +101,8 @@ test('manual item grants and spending are tracked and cannot overdraw inventory'
  const {state,a}=setup();grantItem(state,id,'tool-1',3,'Награда');assert.equal(a.inventory['tool-1'],5);removeInventory(state,id,'tool-1',4,'Крафт вне приложения');assert.equal(a.inventory['tool-1'],1);unchangedOnError(state,()=>removeInventory(state,id,'tool-1',2,'Потеря'),/Недостаточно/);
 });
 test('level thresholds can change, invalid thresholds cannot mutate settings, and daily access resets',()=>{
- const {state,a}=setup();purchase(state,id,'access-1');assert.ok(a.access.includes('access-1'));updateSettings(state,{name:'Новая смена',day:8,duration:21,levelThresholds:'0, 100, 1000, 2000',craftCostsCaps:false});assert.equal(allianceLevel(state,a),3);assert.deepEqual(a.access,[]);assert.ok(validateState(state));
- unchangedOnError(state,()=>updateSettings(state,{name:'Тест',day:7,duration:21,levelThresholds:'0, 500, 400'}),/строго возрастать/);
+ const {state,a}=setup();purchase(state,id,'access-1');assert.ok(a.access.includes('access-1'));updateSettings(state,{name:'Новая смена',day:8,duration:11,levelThresholds:'0, 100, 1000, 2000',craftCostsCaps:false});assert.equal(allianceLevel(state,a),3);assert.deepEqual(a.access,[]);assert.ok(validateState(state));
+ unchangedOnError(state,()=>updateSettings(state,{name:'Тест',day:7,duration:11,levelThresholds:'0, 500, 400'}),/строго возрастать/);
 });
 test('backups reject invalid currencies, unknown ingredients, duplicate IDs and charge overflow',()=>{
  const {state}=setup();const cases=[s=>s.alliances[0].caps=-1,s=>s.alliances[0].interface.charge=101,s=>s.alliances[1].id=s.alliances[0].id,s=>s.alliances[0].inventory['missing']=2,s=>s.itemOverrides['upgrade-1']={recipe:{type:'specific',variants:[['missing']]}}];

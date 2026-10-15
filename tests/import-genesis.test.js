@@ -51,7 +51,7 @@ test('six-sheet import joins normalized names, preserves levels and creates no d
  assert.ok(validateState(state));
  assert.equal(JSON.stringify(workbook), before);
  assert.deepEqual(convertGenesisWorkbook(workbook, { now: NOW }), { state, report });
- assert.deepEqual(state.shift, { name: 'Генезис', day: 1, duration: 21 });
+ assert.deepEqual(state.shift, { name: 'Генезис', day: 1, duration: 11 });
  assert.deepEqual(state.rules.levelThresholds, Array.from({ length: 100 }, (_, index) => index * 100));
  assert.deepEqual(state.alliances.map(alliance => alliance.id), ['genesis-alliance-1', 'genesis-alliance-2']);
  const [first, second] = state.alliances;
@@ -65,6 +65,7 @@ test('six-sheet import joins normalized names, preserves levels and creates no d
   assert.deepEqual(alliance.access, []);
   assert.equal(alliance.earnedCaps, 0);
   assert.equal(alliance.earnedCapsKnown, false);
+  assert.doesNotMatch(alliance.sourceNotes.missing, /стойк|ёмк|куплен.{0,16}гравитон/iu);
  }
  assert.deepEqual(first.upgrades, []);
  assert.deepEqual(second.upgrades, ['upgrade-18']);
@@ -72,6 +73,8 @@ test('six-sheet import joins normalized names, preserves levels and creates no d
  assert.equal(report.createdAt, NOW);
  assert.equal(report.summary.recipesChecked, 99);
  assert.equal(report.summary.catalogEntries, 110);
+ assert.equal(report.defaults.find(entry => entry.field === 'shift.duration').value, 11);
+ assert.match(report.defaults.find(entry => entry.field === 'shift.duration').reason, /уточнению организатора/);
 });
 
 test('unknown capacity stays unknown and larger graviton totals are not clamped', () => {

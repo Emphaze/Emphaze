@@ -586,3 +586,34 @@ dialog { max-width: 680px; width: calc(100% - 32px); max-height: 90dvh; padding:
  .alliance-identity{flex:1 1 100%;min-width:0}
  .alliance-top .level-pill{margin-left:46px}
 }
+
+/* Two interface metrics and clearly separated tool levels. */
+.interface-grid { align-items: start; }
+.interface-card .interface-heading { margin-bottom: 14px; }
+.interface-values {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0 0 16px;
+  padding: 14px 0 0;
+  border-bottom: 0;
+}
+.interface-values strong { margin-top: 6px; }
+.interface-values > div + div { padding-left: 20px; }
+.tool-level-group { margin-bottom: 32px; }
+.tool-level-group:last-child { margin-bottom: 0; }
+.tool-level-heading {
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tool-level-heading h2 { font-size: 18px; }
+.tool-level-heading .muted-number { margin-left: 0; }
+.tool-level-group .catalog-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+@media (max-width: 540px) {
+  .interface-values { gap: 18px; }
+  .tool-level-group { margin-bottom: 28px; }
+}
