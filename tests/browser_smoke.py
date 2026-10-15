@@ -78,6 +78,59 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     assert snapshot()['alliances'][0]['xp'] == 2040
     go('alliances')
     assert 'Уровень' not in page.locator('.alliance-banner').inner_text() or page.locator('.detail-stats').is_visible()
+    # Imported notes are hidden even when the stored profile still contains them.
+    notes_copy = page.request.get(URL+'/api/state').json()
+    notes_copy['state']['alliances'][0]['sourceNotes'] = {'level':'Старая заметка из таблицы','cadia':'Старый бонус'}
+    csrf = page.request.get(URL+'/api/session').json()['csrfToken']
+    assert page.request.put(URL+'/api/state',data=notes_copy,headers={'Origin':URL,'X-CSRF-Token':csrf}).status == 200
+    page.reload(); page.wait_for_selector('.access-banner.admin'); go('alliances')
+    assert page.locator('.source-notes').count() == 0
+    assert 'Старая заметка из таблицы' not in page.locator('main').inner_text()
+    # Click a metric and edit it inside the alliance card; cancel does not save.
+    def inline_value(resource,value):
+        page.locator(f'.detail-stats [data-action=editMetric][data-resource={resource}]').click()
+        assert page.locator('dialog[open]').count() == 0
+        page.locator('.metric-form [name=value]').fill(str(value))
+        page.locator('.metric-form .submit').click()
+        page.locator('.metric-form').wait_for(state='detached')
+    earned_inline = first_alliance()['earnedCaps']
+    inline_value('caps',1000)
+    assert first_alliance()['caps'] == 1000
+    assert first_alliance()['earnedCaps'] == earned_inline
+    inline_value('caps',2480)
+    inline_value('xp',1900)
+    assert first_alliance()['xp'] == 1900
+    inline_value('xp',2040)
+    inline_value('level',0)
+    assert first_alliance()['xp'] == 2040
+    assert page.locator('[data-action=editMetric][data-resource=level] .stat-value').inner_text() == '0'
+    inline_value('level',5)
+    assert first_alliance()['xp'] == 2040
+    before_cancel = snapshot()
+    page.locator('[data-action=editMetric][data-resource=caps]').click()
+    page.locator('.metric-form [name=value]').fill('999')
+    page.locator('.metric-form [name=value]').press('Escape')
+    assert page.locator('.metric-form').count() == 0
+    assert snapshot() == before_cancel
+    # A refresh started before editing cannot replace an unsaved inline value.
+    pending_refresh = []
+    def hold_refresh(route):
+        if route.request.method == 'GET': pending_refresh.append(route)
+        else: route.continue_()
+    page.route('**/api/state',hold_refresh)
+    for _ in range(24):
+        if pending_refresh: break
+        page.wait_for_timeout(500)
+    assert pending_refresh, 'Expected a periodic state refresh'
+    page.locator('[data-action=editMetric][data-resource=caps]').click()
+    page.locator('.metric-form [name=value]').fill('777')
+    delayed_state = page.request.get(URL+'/api/state').json()
+    delayed_state['revision'] += 1
+    pending_refresh[0].fulfill(status=200,json=delayed_state)
+    page.wait_for_timeout(100)
+    assert page.locator('.metric-form [name=value]').input_value() == '777'
+    page.unroute('**/api/state',hold_refresh)
+    page.locator('[data-action=cancelMetric]').click()
     page.locator('[data-action=adjustRole][data-role=engineers]').click()
     assert page.locator('[name=value]').input_value() == '34'
     page.locator('[name=value]').fill('39')
@@ -268,6 +321,15 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         repeated.locator('[data-action=claimBonus][disabled]').wait_for()
         assert snapshot()['alliances'][-1]['caps'] == expected_caps
         assert snapshot()['alliances'][-1]['planets']['cadia']['actionPoints'] == 8
+    # Inline editors fit narrow screens and cancel without changing progress.
+    go('alliances')
+    for width in [320,390]:
+        page.set_viewport_size({'width':width,'height':900})
+        page.locator('[data-action=editMetric][data-resource=caps]').click()
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        if width == 390: page.screenshot(path='/tmp/genesis-inline-owner.png',full_page=True)
+        page.locator('[data-action=cancelMetric]').click()
+    page.set_viewport_size({'width':1440,'height':1050})
     # Mobile navigation and overflow are tested in a fresh, uncontaminated profile.
     mobile = browser.new_page(viewport={'width':390,'height':844},reduced_motion='reduce')
     mobile.on('pageerror',lambda error:errors.append(str(error)))
@@ -282,6 +344,7 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     for target in ['alliances','planets','interface','access','upgrades','equipment','history']:
         mobile.get_by_role('button',name='Открыть меню').click()
         mobile.locator(f'nav [data-page="{target}"]').click()
+        if target == 'alliances': assert mobile.locator('[data-action=editMetric],.metric-form').count() == 0
         assert mobile.evaluate('document.documentElement.scrollWidth <= innerWidth'),target
     page.get_by_role('button',name='Выйти',exact=True).click()
     page.get_by_role('button',name='Вход прайма',exact=True).wait_for()

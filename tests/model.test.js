@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
+import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,setAllianceLevel,resetAllProgress,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
@@ -68,6 +68,50 @@ test('map bonus levels raise the displayed level while XP progress follows exper
  adjustResource(state,{allianceId:id,resource:'xp',amount:50,reason:'Награда за испытание'});assert.deepEqual(xpProgress(state,a),{level:8,next:600,percent:0,remaining:100});
  unchangedOnError(state,()=>updateBonusLevels(state,id,{bonusLevels:-1,reason:'Ошибка'}));unchangedOnError(state,()=>updateBonusLevels(state,id,{bonusLevels:3,reason:' '}));
  a.xp=9900;assert.deepEqual(xpProgress(state,a),{level:102,next:undefined,percent:100,remaining:0});assert.ok(validateState(state));
+});
+test('manual alliance levels preserve experience and found levels while future XP keeps affecting level',()=>{
+ const {state,a}=setup();state.rules.levelThresholds=Array.from({length:100},(_,i)=>i*100);a.xp=450;a.bonusLevels=2;
+ assert.equal(setAllianceLevel(state,id,{level:3,reason:'Уточнён фактический уровень'}),true);assert.equal(allianceLevel(state,a),3);assert.equal(a.levelAdjustment,-4);assert.equal(a.xp,450);assert.equal(a.bonusLevels,2);assert.equal(state.events[0].detail,'Уровень альянса: 7 → 3');
+ adjustResource(state,{allianceId:id,resource:'xp',amount:50,reason:'Награда'});assert.equal(allianceLevel(state,a),4);
+ setAllianceLevel(state,id,{level:0,reason:'Установлен нулевой уровень'});assert.equal(a.xp,500);assert.equal(a.bonusLevels,2);assert.equal(allianceLevel(state,a),0);
+ setResource(state,{allianceId:id,resource:'xp',value:0,reason:'Исправлен опыт'});assert.equal(allianceLevel(state,a),0);assert.ok(validateState(state));
+ setResource(state,{allianceId:id,resource:'xp',value:600,reason:'Новый опыт'});assert.equal(allianceLevel(state,a),1);assert.ok(validateState(JSON.parse(JSON.stringify(state))));
+ const before=structuredClone(state);assert.equal(setAllianceLevel(state,id,{level:1,reason:'Проверка без изменений'}),false);assert.deepEqual(state,before);
+});
+test('level corrections reject invalid offsets and prevent level overflow before other resource mutations',()=>{
+ const {state,a}=setup();state.rules.levelThresholds=[0,100];a.xp=50;
+ for(const level of [-1,0.5,MAX_NUMBER+1,Infinity,null,true,''])unchangedOnError(state,()=>setAllianceLevel(state,id,{level,reason:'Проверка'}));
+ unchangedOnError(state,()=>setAllianceLevel(state,id,{level:0,reason:' '}));
+ setAllianceLevel(state,id,{level:MAX_NUMBER,reason:'Верхняя граница'});assert.ok(validateState(state));
+ unchangedOnError(state,()=>setResource(state,{allianceId:id,resource:'xp',value:100,reason:'Переполнение уровня'}));
+ unchangedOnError(state,()=>adjustResource(state,{allianceId:id,resource:'xp',amount:50,reason:'Переполнение уровня'}));
+ unchangedOnError(state,()=>updateBonusLevels(state,id,{bonusLevels:1,reason:'Переполнение уровня'}));
+ unchangedOnError(state,()=>recordEventResults(state,{name:'Переполнение уровня',results:[{allianceId:id,place:1,caps:10,xp:50}]}));
+ unchangedOnError(state,()=>updateSettings(state,{name:state.shift.name,day:8,duration:11,levelThresholds:'0,10',craftCostsCaps:false}));
+ for(const levelAdjustment of [-MAX_NUMBER-1,MAX_NUMBER+1,0.5,'-1',null,Infinity]){const copy=structuredClone(state);copy.alliances[0].levelAdjustment=levelAdjustment;assert.equal(validateState(copy),false);}
+ const tooHigh=structuredClone(state);tooHigh.alliances[0].levelAdjustment=MAX_NUMBER;assert.equal(validateState(tooHigh),false);
+ a.bonusLevels=MAX_NUMBER-1;a.levelAdjustment=0;assert.ok(validateState(state));setAllianceLevel(state,id,{level:0,reason:'Нижняя граница коррекции'});assert.equal(a.levelAdjustment,-MAX_NUMBER);assert.ok(validateState(state));
+});
+test('reset clears all progress and planet ownership while preserving identities, rules, prices and audit',()=>{
+ const {state,a}=setup();a.bonusLevels=2;a.levelAdjustment=-1;a.earnedCapsKnown=false;a.sourceNotes={level:'Уровень из таблицы',missing:'Неполные данные'};a.access=['access-1'];a.upgrades=['upgrade-18'];startCadiaLanding(state,id);
+ state.itemOverrides['equip-1']={price:125};state.customItems.push({id:'custom-reset-test',category:'equipment',name:'Предмет прайма',effect:'Особый эффект',price:25,recipeText:'-',recipe:null});
+ const identities=state.alliances.map(alliance=>({id:alliance.id,name:alliance.name,motto:alliance.motto,color:alliance.color,interfaceName:alliance.interface.name,children:alliance.children.map(child=>({...child,xp:0}))}));
+ const preserved=structuredClone({shift:state.shift,rules:state.rules,itemOverrides:state.itemOverrides,customItems:state.customItems}),history=structuredClone(state.events);
+ assert.equal(resetAllProgress(state,{reason:'Обнуление по решению прайма'}),true);
+ assert.deepEqual({shift:state.shift,rules:state.rules,itemOverrides:state.itemOverrides,customItems:state.customItems},preserved);
+ assert.deepEqual(state.alliances.map(alliance=>({id:alliance.id,name:alliance.name,motto:alliance.motto,color:alliance.color,interfaceName:alliance.interface.name,children:alliance.children})),identities);
+ for(const alliance of state.alliances){
+  assert.deepEqual([alliance.caps,alliance.earnedCaps,alliance.xp,alliance.bonusLevels,allianceLevel(state,alliance)],[0,0,0,0,0]);assert.equal(alliance.earnedCapsKnown,true);assert.equal(alliance.levelAdjustment,-1);
+  assert.ok(Object.values(alliance.functions).every(value=>value===0));assert.deepEqual(alliance.inventory,{});assert.deepEqual(alliance.upgrades,[]);assert.deepEqual(alliance.access,[]);assert.equal(alliance.sourceNotes,undefined);
+  assert.deepEqual([alliance.interface.charge,alliance.interface.gravitons,alliance.interface.resilience,alliance.interface.gravitonsPurchased],[0,0,0,0]);assert.equal(alliance.interface.maxCharge,1);
+  assert.deepEqual(alliance.planets,{cadia:{outposts:[],actionPoints:0},fenris:{territories:[]},cronus:{shuttles:[]}});
+ }
+ assert.deepEqual(state.events.slice(1),history);assert.equal(state.events[0].kind,'reset');assert.equal(state.events[0].allianceId,id);assert.match(state.events[0].title,/всех альянсов/);assert.ok(validateState(JSON.parse(JSON.stringify(state))));
+ state.rules.levelThresholds=[0,100,200];adjustResource(state,{allianceId:id,resource:'xp',amount:100,reason:'Первый опыт после обнуления'});assert.equal(allianceLevel(state,a),1);
+});
+test('reset validates its reason and input before clearing anything and leaves an empty journey unchanged',()=>{
+ const {state}=setup();unchangedOnError(state,()=>resetAllProgress(state,{reason:''}));const invalid=structuredClone(state);invalid.alliances[0].caps=-1;unchangedOnError(invalid,()=>resetAllProgress(invalid,{reason:'Обнуление'}));
+ const empty=initialState(true),before=structuredClone(empty);assert.equal(resetAllProgress(empty,{reason:'Обнуление'}),false);assert.deepEqual(empty,before);assert.ok(validateState(empty));
 });
 test('raider action points and subfunction reputation remain separate',()=>{
  const {state,a}=setup(),rep=a.functions.engineers;adjustResource(state,{allianceId:id,resource:'raiders',amount:2,reason:'Победа'});assert.equal(a.functions.raiders,8);assert.equal(a.functions.engineers,rep);

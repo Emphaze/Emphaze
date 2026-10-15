@@ -1,7 +1,7 @@
 import './style.css';
 import { icon, emblem } from './icons.js';
 import { roles, planets, categories, getItem, allItems, eventRewards } from './catalog.js';
-import { STORAGE_KEY, LEGACY_KEY, initialState, createAlliance, uid, integer, text, allianceLevel, xpProgress, getAlliance, log, resourceValue, setResource, recordEventResults, updateBonusLevels, updateInterface, addPlanetRecord, startCadiaLanding, outpostBonusStatus, claimOutpostBonus, removePlanetRecord, grantItem, owned, purchase, craft, removeInventory, updateSettings, validateState } from './model.js';
+import { STORAGE_KEY, LEGACY_KEY, initialState, createAlliance, uid, integer, text, allianceLevel, xpProgress, getAlliance, log, resourceValue, setResource, recordEventResults, updateBonusLevels, setAllianceLevel, updateInterface, addPlanetRecord, startCadiaLanding, outpostBonusStatus, claimOutpostBonus, removePlanetRecord, grantItem, owned, purchase, craft, removeInventory, updateSettings, validateState } from './model.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=n=>Number(n).toLocaleString('ru-RU');
 const SITE_NAME='Космический корабль Генезис';
@@ -9,7 +9,7 @@ const app=document.querySelector('#app');
 let state,storageProblem=false,hasLegacy=false;
 try { state=app.dataset.snapshot?JSON.parse(app.dataset.snapshot):initialState(); if(!validateState(state))throw Error(); } catch { state=initialState(); }
 try { hasLegacy=!!localStorage.getItem(LEGACY_KEY); } catch {}
-let auth={role:'viewer',configured:false},serverReady=false,revision=0,busy=false;
+let auth={role:'viewer',configured:false},serverReady=false,revision=0,busy=false,editingMetric=null;
 const readActions=new Set(['noop','close','menu','login','logout','selectAlliance','activate','openPlanet','planetTab','equipmentTab','catalogFilter','item','inventory','gotoEquipment','export','downloadSnapshot']);
 const isAdmin=()=>serverReady&&auth.role==='admin';
 let page='overview',activeId=state.alliances[0]?.id||'',planet='cadia',equipmentTab='equipment',search='',catalogFilter='all';
@@ -27,9 +27,11 @@ async function save() {
  const result=await api('/api/state',{method:'PUT',body:JSON.stringify({state,revision})});revision=result.revision;
 }
 async function refreshRemote(first=false) {
- if(location.protocol==='file:'||busy||(!first&&document.querySelector('#modal')?.open))return;
+ if(location.protocol==='file:'||busy||(!first&&(document.querySelector('#modal')?.open||editingMetric)))return;
  try{
+  const requestedRevision=revision,requestedRole=auth.role;
   const [session,data]=await Promise.all([api('/api/session'),api('/api/state')]);
+  if(!first&&(busy||editingMetric||document.querySelector('#modal')?.open||revision!==requestedRevision||auth.role!==requestedRole))return;
   if(!validateState(data.state))throw Error('Некорректные данные сервера.');
   const changed=!serverReady||revision!==data.revision||session.role!==auth.role;
   auth=session;serverReady=true;
@@ -46,12 +48,13 @@ function applyAccessControls(){
  app.querySelectorAll('[data-action]').forEach(el=>{if(isAdmin()||readActions.has(el.dataset.action))return;if(el.classList.contains('function-card')){el.removeAttribute('data-action');el.disabled=true;el.querySelector('small')?.remove();}else el.hidden=true;});
  if(!isAdmin())app.querySelector('.daily-callout')?.remove();
 }
-function navigate(id){page=id;search='';catalogFilter='all';render();window.scrollTo(0,0);}
+function navigate(id){page=id;search='';catalogFilter='all';editingMetric=null;render();window.scrollTo(0,0);}
 const button=(label,action,cls='secondary',attrs='')=>!isAdmin()&&!readActions.has(action)?'':`<button class="button ${cls}" data-action="${action}" ${attrs}>${label}</button>`;
 const empty=(title,note,action='')=>`<div class="empty">${icon('orbit')}<h2>${title}</h2><p>${note}</p>${action}</div>`;
 const allianceOptions=(id=activeId)=>state.alliances.map(a=>`<option value="${a.id}" ${a.id===id?'selected':''}>${esc(a.name)}</option>`).join('');
 function render(){
  if(!state.alliances.some(a=>a.id===activeId))activeId=state.alliances[0]?.id||'';
+ if(editingMetric&&(page!=='alliances'||editingMetric.allianceId!==activeId||!isAdmin()))editingMetric=null;
  document.title=SITE_NAME;
  const titles={overview:'Атрибуты альянсов',alliances:'Альянсы',planets:'Планеты',interface:'Интерфейсы',access:'Устройства',upgrades:'Прокачка',equipment:'Эквип',history:'Хроника'};
  const descriptions={overview:'Крышечки, опыт и уровни всех альянсов.',alliances:'Показатели, искатели и владения выбранного альянса.',planets:'Аванпосты Кадии, исследования Фенриса и шаттлы Кронуса.',interface:'Заряд и гравитоны каждого альянса.',access:'Устройства, открывающие особые возможности.',upgrades:'Улучшения альянса: цена, эффект и крафт.',equipment:'Предметы, способности и инструменты.',history:'Награды за события и история изменений.'};
@@ -73,14 +76,19 @@ function render(){
 function overview(){
  return `<section class="overview-alliances"><div class="section-heading"><h2>Все альянсы <span class="muted-number">${state.alliances.length}</span></h2><button class="text-button" data-page="alliances">Открыть альянс ${icon('arrow')}</button></div><div class="alliance-grid">${state.alliances.map(allianceCard).join('')||empty('Нет альянсов','Добавьте первый альянс.',button('Добавить альянс','addAlliance'))}</div></section>`;
 }
-function stat(i,value,label,note,color){return `<article class="stat panel"><span class="stat-icon ${color}">${icon(i)}</span><strong class="stat-value">${value}</strong><h3>${label}</h3><p>${note}</p></article>`;}
-function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'получено с начала учёта':'заработано за путешествие'}`;}
-function levelDescription(a){const bonus=a.bonusLevels||0;return `${allianceLevel(state,a)-bonus} по опыту${bonus?` + ${bonus} найдено на карте`:''}`;}
-function sourceNotesPanel(a){
- const labels={level:'Уровень в таблице',cadia:'Кадия',fenris:'Фенрис',cronus:'Кронус'};
- const rows=Object.entries(a.sourceNotes||{}).filter(([key,value])=>labels[key]&&value);
- return rows.length?`<details class="source-notes panel"><summary>${icon('book')} Заметки из таблицы</summary><dl>${rows.map(([key,value])=>`<div><dt>${labels[key]}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></details>`:'';
+function stat(i,value,label,note,color,metric=null){
+ const editable=metric&&isAdmin(),editing=editable&&editingMetric?.allianceId===metric.allianceId&&editingMetric.resource===metric.resource;
+ const current=metric?(metric.resource==='level'?allianceLevel(state,getAlliance(state,metric.allianceId)):resourceValue(state,metric)):0;
+ let content=`<strong class="stat-value">${value}</strong><h3>${label}</h3>`;
+ if(editing){
+  content=`<form class="metric-form" data-form="metric" data-id="${metric.allianceId}" data-resource="${metric.resource}"><label class="metric-label"><span>${label}</span><input name="value" type="number" inputmode="numeric" min="0" max="1000000000" step="1" value="${current}" required aria-label="Новое значение: ${label}"></label><p class="form-error" role="alert"></p><div class="metric-actions"><button class="button primary submit" type="submit">${icon('check')} Сохранить</button><button class="button ghost" type="button" data-action="cancelMetric">Отмена</button></div></form>`;
+ }else if(editable){
+  content=`<button class="stat-edit-trigger" data-action="editMetric" data-id="${metric.allianceId}" data-resource="${metric.resource}" aria-label="Изменить: ${label}"><strong class="stat-value">${value}</strong><span class="stat-label">${label}</span><span class="stat-edit-icon" aria-hidden="true">${icon('edit')}</span></button>`;
+ }
+ return `<article class="stat panel ${editing?'editing':''}"><span class="stat-icon ${color}">${icon(i)}</span>${content}<p>${note}</p></article>`;
 }
+function earningsDescription(a){return `${num(a.earnedCaps)} ${a.earnedCapsKnown===false?'получено с начала учёта':'заработано за путешествие'}`;}
+function levelDescription(a){if(a.levelAdjustment)return 'Уровень изменён вручную · опыт сохранён';const bonus=a.bonusLevels||0;return `${allianceLevel(state,a)-bonus} по опыту${bonus?` + ${bonus} найдено на карте`:''}`;}
 function planetSourceNote(a){const note=a.sourceNotes?.[planet];if(!note||/^\s*\d+(?:\.0+)?\s*$/.test(note)||planet==='cronus'&&a.planets.cronus.shuttles.some(r=>r.note===note))return '';return `<div class="source-note">${icon('book')}<div><strong>Бонусы и заметки</strong><p>${esc(note)}</p></div></div>`;}
 function bonusLevelsModal(){const a=active();if(!a)return;modal(`Найденные уровни · ${esc(a.name)}`,`${intro(`Уровень ${allianceLevel(state,a)}: ${levelDescription(a)}. Найденные уровни не меняют опыт и сохраняются при его начислении.`)}<form data-form="bonusLevels">${field('Дополнительные уровни с карты',number('bonusLevels',a.bonusLevels||0))}${field('Причина',input('reason','','required maxlength="160" placeholder="Найдена награда +1 уровень"'))}${submit('Сохранить найденные уровни')}</form>`);}
 function allianceCard(a){
@@ -95,7 +103,7 @@ function allianceCard(a){
 function eventRow(e){const a=state.alliances.find(a=>a.id===e.allianceId);const i={reward:'coin',purchase:'box',craft:'wrench',planet:'orbit',interface:'bolt',event:'trophy',inventory:'box',update:'edit'}[e.kind]||'spark';return `<div class="event-row"><span class="event-icon ${a?.color||'blue'}">${icon(i)}</span><div><strong>${esc(e.title)}</strong><p>${esc(e.detail)}</p><small>${esc(a?.name||'Альянс')} · Сол ${e.sol} · ${new Date(e.time).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</small></div></div>`;}
 function searchBox(placeholder){return `<label class="search">${icon('search')}<input id="search" type="search" placeholder="${placeholder}" aria-label="Поиск" value="${esc(search)}"></label>`;}
 function alliancesPage(){const a=active();return `<div class="toolbar">${searchBox('Найти альянс или искателя…')}${button(`${icon('plus')} Новый альянс`,'addAlliance')}</div><div class="alliance-tabs">${state.alliances.filter(a=>match(a.name)||a.children.some(c=>match(c.name))).map(a=>`<button class="alliance-tab ${a.id===activeId?'selected':''}" data-action="activate" data-id="${a.id}"><span class="emblem mini ${a.color}">${emblem(a.color)}</span>${esc(a.name)}<span>УР. ${allianceLevel(state,a)}</span></button>`).join('')||'<p class="panel-note">Ничего не найдено</p>'}</div>${a?allianceDetail(a):empty('Ваши альянсы скоро выйдут на связь','Создайте первую команду.',button('Новый альянс','addAlliance'))}`;}
-function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} искателей`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange')}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple')}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue')}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div>${sourceNotesPanel(a)}<div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}" title="${esc(r.description)}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('edit')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Искатель</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Изменить личный опыт: ${esc(c.name)}">${icon('spark')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список искателей пока не заполнен.':'Добавьте искателей вашей команды.'}</p>`}<p class="fine-note">Личный опыт также меняет общий опыт альянса на ту же разницу.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
+function allianceDetail(a){const xp=xpProgress(state,a);return `<section class="alliance-banner panel"><span class="emblem large ${a.color}">${emblem(a.color)}</span><div><span class="eyebrow">${a.children.length?`${a.children.length} искателей`:'Альянс'}</span><h2>${esc(a.name)}</h2>${a.motto&&a.motto!=='К новым мирам — вместе'?`<p>${esc(a.motto)}</p>`:''}</div>${button(`${icon('edit')} Редактировать`,'editAlliance','secondary',`data-id="${a.id}"`)}</section><section class="detail-stats">${stat('coin',num(a.caps),'Крышечек на балансе',earningsDescription(a),'orange',{allianceId:a.id,resource:'caps'})}${stat('spark',num(a.xp),'Опыт альянса',xp.next===undefined?'Все пороги пройдены':`${num(xp.remaining)} до следующего уровня`,'purple',{allianceId:a.id,resource:'xp'})}${stat('trending',xp.level,'Уровень альянса','Опыт и находки на карте','blue',{allianceId:a.id,resource:'level'})}</section><div class="level-summary"><p>${icon('trending')} ${esc(levelDescription(a))}</p>${button('Найденные уровни','bonusLevels','secondary')}</div><div class="section-heading"><h2>Подфункции альянса</h2><span class="section-note">Репутация и очки действий</span></div><div class="functions-grid">${roles.map(r=>`<button class="function-card panel" data-action="adjustRole" data-role="${r.id}" title="${esc(r.description)}"><span class="stat-icon ${r.color}">${icon(r.icon)}</span><h3>${r.name}</h3><strong>${num(a.functions[r.id])}</strong><span>${r.id==='raiders'?'Очки действий':'Репутация'}</span><small>Изменить ${icon('edit')}</small></button>`).join('')}</div><div class="detail-columns"><section class="panel"><div class="section-heading"><h2>Искатели альянса <span class="muted-number">${a.children.length}</span></h2><button class="text-button" data-action="addChild">${icon('plus')}Искатель</button></div>${a.children.filter(c=>match(c.name)||match(a.name)).map(c=>`<div class="child-row"><span class="child-avatar ${roles.find(r=>r.id===c.role).color}">${esc(c.name[0])}</span><div><strong>${esc(c.name)}</strong><small>${roles.find(r=>r.id===c.role).name} · ${num(c.xp)} личного опыта</small></div><button class="icon-button" data-action="editChild" data-id="${c.id}" aria-label="Редактировать ${esc(c.name)}">${icon('edit')}</button><button class="icon-button" data-action="childXP" data-id="${c.id}" aria-label="Изменить личный опыт: ${esc(c.name)}">${icon('spark')}</button></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список искателей пока не заполнен.':'Добавьте искателей вашей команды.'}</p>`}<p class="fine-note">Личный опыт также меняет общий опыт альянса на ту же разницу.</p></section><section class="panel"><div class="section-heading"><h2>Во владении альянса</h2><button class="text-button" data-action="inventory">Инвентарь ${icon('arrow')}</button></div><div class="ownership-list">${a.upgrades.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('check')}<span>${esc(i.name)}</span><span class="tag">ПРОКАЧКА</span></div>`).join('')||`<p class="panel-note">${a.sourceNotes?'Список улучшений пока не заполнен.':'Улучшения пока не установлены.'}</p>`}${a.access.map(id=>getItem(state,id)).filter(Boolean).map(i=>`<div>${icon('key')}<span>${esc(i.name)}</span><span class="tag">ЭТОТ СОЛ</span></div>`).join('')}</div><div class="resource-mini"><span>${icon('box')} ${Object.values(a.inventory).reduce((n,v)=>n+v,0)} предметов и инструментов</span>${button('Открыть эквип','gotoEquipment','secondary')}</div></section></div>`;}
 function planetTabs(){return `<div class="segment-tabs planet-tabs">${planets.map(p=>`<button class="${planet===p.id?'selected':''}" data-action="planetTab" data-planet="${p.id}">${icon(p.icon)}${p.name}</button>`).join('')}</div>`;}
 function planetsPage(){
  const a=active(),p=planets.find(p=>p.id===planet);
@@ -210,6 +218,12 @@ async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmi
  if(action==='menu')document.querySelector('.sidebar').classList.toggle('mobile-open');
  if(action==='settings')settingsModal();
  if(action==='adjust')adjustModal();
+ if(action==='editMetric'){
+  if(!['caps','xp','level'].includes(b.dataset.resource)||id!==activeId)throw Error('Выберите показатель текущего альянса.');
+  editingMetric={allianceId:id,resource:b.dataset.resource};render();
+  const input=document.querySelector('.metric-form [name="value"]');input.focus();input.select();
+ }
+ if(action==='cancelMetric'){editingMetric=null;render();}
  if(action==='bonusLevels')bonusLevelsModal();
  if(action==='adjustRole')adjustModal(role);
  if(action==='adjustAP')adjustModal('cadiaAP');
@@ -255,6 +269,7 @@ async function handleAction(b){const {action,id,role,child}=b.dataset;if(!isAdmi
  if(action==='confirmReset'){await mutate(()=>{state={...state,alliances:[],events:[]};});activeId='';render();toast('Создайте альянсы для нового путешествия.');}
 }
 document.addEventListener('click',async e=>{const p=e.target.closest('[data-page]');if(p){navigate(p.dataset.page);return;}const b=e.target.closest('[data-action]');if(b)try{await handleAction(b);}catch(err){toast(err.message,true);}if(e.target.id==='modal'){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&e.target.closest('[data-form="metric"]')){e.preventDefault();editingMetric=null;render();}});
 document.addEventListener('input',e=>{if(e.target.id==='search'){const pos=e.target.selectionStart;search=e.target.value;render();const el=document.querySelector('#search');el.focus();try{el.setSelectionRange(pos,pos);}catch{}}});
 document.addEventListener('change',async e=>{
  if(e.target.id==='active-alliance'){activeId=e.target.value;render();}
@@ -265,6 +280,11 @@ document.addEventListener('change',async e=>{
 });
 function processForm(kind,data,form){
  const a=active();
+ if(kind==='metric'){
+  const options={value:data.value,reason:'Изменение в карточке альянса'};
+  if(form.dataset.resource==='level')setAllianceLevel(state,form.dataset.id,{level:data.value,reason:options.reason});
+  else setResource(state,{...options,allianceId:form.dataset.id,resource:form.dataset.resource});
+ }
  if(kind==='adjust')setResource(state,{...data,reason:data.reason.trim()||'Обновление показателя',childId:data.resource==='xp'?data.childId:''});
  if(kind==='addAlliance'){const name=text(data.name,'Название',60);if(state.alliances.some(a=>a.name.toLowerCase()===name.toLowerCase()))throw Error('Альянс с таким названием уже существует.');const next=createAlliance(name,data.motto,data.color);state.alliances.push(next);activeId=next.id;page='alliances';log(state,next.id,'Альянс на связи',next.name);}
  if(kind==='editAlliance'){const name=text(data.name,'Название',60),motto=text(data.motto,'Девиз',140);if(state.alliances.some(x=>x.id!==a.id&&x.name.toLowerCase()===name.toLowerCase()))throw Error('Название уже занято.');a.name=name;a.motto=motto;a.color=data.color;log(state,a.id,'Обновлён альянс',name);}
@@ -299,7 +319,7 @@ document.addEventListener('submit',async e=>{
  const submitButton=form.querySelector('.submit');submitButton.disabled=true;
  try{
   if(kind==='login'){const result=await api('/api/login',{method:'POST',body:JSON.stringify({password:data.password})});auth={...result,configured:true};await refreshRemote(true);render();toast('Вы вошли как прайм.');return;}
-  await mutate(()=>processForm(kind,data,form));render();toast(kind==='craft'?'Крафт завершён. Ингредиенты израсходованы.':kind==='purchase'?'Покупка завершена. Крышечки списаны.':kind==='eventResults'?'Награды начислены всем выбранным альянсам.':'Изменения сохранены для всех зрителей.');
+  await mutate(()=>processForm(kind,data,form));if(kind==='metric')editingMetric=null;render();toast(kind==='craft'?'Крафт завершён. Ингредиенты израсходованы.':kind==='purchase'?'Покупка завершена. Крышечки списаны.':kind==='eventResults'?'Награды начислены всем выбранным альянсам.':'Изменения сохранены для всех зрителей.');
  }catch(err){form.querySelector('.form-error').textContent=err.message;if(!form.isConnected)toast(err.message,true);}finally{submitButton.disabled=false;}
 });
 window.addEventListener('hashchange',()=>{if(location.hash==='#overview')navigate('overview');});
