@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {catalog,getItem} from '../src/catalog.js';
-import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
+import {initialState,createAlliance,validateState,allianceLevel,xpProgress,updateBonusLevels,MAX_NUMBER,resourceValue,setResource,adjustResource,recordEventResults,updateInterface,addPlanetRecord,startCadiaLanding,outpostBonusStatus,claimOutpostBonus,purchase,craft,grantItem,removeInventory,updateSettings} from '../src/model.js';
 const id='alliance-1';
 const setup=()=>{const state=initialState();return {state,a:state.alliances[0]};};
 const unchangedOnError=(s,fn,pattern)=>{const before=structuredClone(s);assert.throws(fn,pattern);assert.deepEqual(s,before);};
@@ -13,6 +13,50 @@ test('caps balance and total earned are independent from experience',()=>{
  const {state,a}=setup(),xp=a.xp,balance=a.caps,earned=a.earnedCaps;
  adjustResource(state,{allianceId:id,resource:'caps',amount:100,reason:'Первое место'});assert.equal(a.caps,balance+100);assert.equal(a.earnedCaps,earned+100);assert.equal(a.xp,xp);
  purchase(state,id,'upgrade-1');assert.equal(a.caps,balance-200);assert.equal(a.earnedCaps,earned+100);assert.ok(a.upgrades.includes('upgrade-1'));
+});
+test('manual balance corrections set the entered total in both directions without changing earned caps',()=>{
+ const {state,a}=setup();a.caps=2000;const earned=a.earnedCaps,xp=a.xp;
+ assert.equal(resourceValue(state,{allianceId:id,resource:'caps'}),2000);
+ assert.equal(setResource(state,{allianceId:id,resource:'caps',value:1000,reason:'Обновление показателя'}),true);
+ assert.equal(a.caps,1000);assert.equal(a.earnedCaps,earned);assert.equal(a.xp,xp);assert.equal(state.events[0].detail,'Крышечки: 2000 → 1000');assert.equal(state.events[0].kind,'update');
+ setResource(state,{allianceId:id,resource:'caps',value:2000,reason:'Проверен баланс'});assert.equal(a.caps,2000);assert.equal(a.earnedCaps,earned);
+ setResource(state,{allianceId:id,resource:'caps',value:0,reason:'Баланс обнулён'});assert.equal(a.caps,0);assert.equal(a.earnedCaps,earned);assert.ok(validateState(state));
+});
+test('setting personal XP reads the child value and adjusts alliance XP by only the difference',()=>{
+ const {state,a}=setup(),child=a.children[0],allianceXP=a.xp,childXP=child.xp;
+ assert.equal(resourceValue(state,{allianceId:id,resource:'xp',childId:child.id}),childXP);assert.equal(resourceValue(state,{allianceId:id,resource:'xp'}),allianceXP);
+ setResource(state,{allianceId:id,resource:'xp',childId:child.id,value:childXP+100,reason:'Проверен личный опыт'});
+ assert.equal(child.xp,childXP+100);assert.equal(a.xp,allianceXP+100);assert.match(state.events[0].detail,/Опыт: 220 → 320/);
+ setResource(state,{allianceId:id,resource:'xp',childId:child.id,value:0,reason:'Исправлена запись'});assert.equal(child.xp,0);assert.equal(a.xp,allianceXP-childXP);
+ const beforeChild=child.xp;setResource(state,{allianceId:id,resource:'xp',value:500,reason:'Проверен общий опыт'});assert.equal(a.xp,500);assert.equal(child.xp,beforeChild);assert.ok(validateState(state));
+ a.xp=MAX_NUMBER;unchangedOnError(state,()=>setResource(state,{allianceId:id,resource:'xp',childId:child.id,value:1,reason:'Проверка переполнения'}));
+ child.xp=100;a.xp=50;unchangedOnError(state,()=>setResource(state,{allianceId:id,resource:'xp',childId:child.id,value:0,reason:'Проверка отрицательного итога'}));
+});
+test('setting reputation, raider AP, planetary AP and charge keeps their values independent',()=>{
+ const {state,a}=setup(),astro=a.functions.astrophysicists;
+ setResource(state,{allianceId:id,resource:'engineers',value:12,reason:'Проверена репутация'});
+ setResource(state,{allianceId:id,resource:'raiders',value:0,reason:'Проверены ОД райдеров'});
+ setResource(state,{allianceId:id,resource:'cadiaAP',value:7,reason:'Проверены ОД Кадии'});
+ setResource(state,{allianceId:id,resource:'charge',value:350,reason:'Проверен заряд'});
+ assert.equal(a.functions.engineers,12);assert.equal(a.functions.raiders,0);assert.equal(a.functions.astrophysicists,astro);assert.equal(a.planets.cadia.actionPoints,7);assert.equal(a.interface.charge,350);assert.equal(a.interface.maxCharge,350);assert.equal(a.interface.maxChargeKnown,false);
+ for(const [resource,value] of [['engineers',12],['raiders',0],['cadiaAP',7],['charge',350]])assert.equal(resourceValue(state,{allianceId:id,resource}),value);
+ setResource(state,{allianceId:id,resource:'charge',value:0,reason:'Заряд израсходован'});assert.equal(a.interface.charge,0);assert.equal(a.interface.maxCharge,350);assert.ok(validateState(JSON.parse(JSON.stringify(state))));
+});
+test('invalid manual values, resources and foreign children are rejected atomically',()=>{
+ const {state}=setup(),valid={allianceId:id,resource:'caps',value:1000,reason:'Обновление показателя'};
+ for(const value of [-1,0.5,Infinity,NaN,MAX_NUMBER+1,'',null,undefined,true])unchangedOnError(state,()=>setResource(state,{...valid,value}));
+ for(const change of [{resource:'missing'},{resource:'resilience'},{allianceId:'missing'},{resource:'xp',childId:'child-2-1'},{childId:'child-1-1'},{reason:' '}]){
+  unchangedOnError(state,()=>setResource(state,{...valid,...change}));
+ }
+ const before=structuredClone(state);assert.throws(()=>resourceValue(state,{allianceId:id,resource:'xp',childId:'child-2-1'}));assert.throws(()=>resourceValue(state,{allianceId:id,resource:'missing'}));assert.deepEqual(state,before);
+});
+test('setting the current value is a no-op without events or backup changes',()=>{
+ const {state,a}=setup();
+ for(const selection of [{resource:'caps'},{resource:'xp'},{resource:'xp',childId:a.children[0].id},{resource:'raiders'},{resource:'charge'},{resource:'cadiaAP'}]){
+  const before=structuredClone(state),value=resourceValue(state,{allianceId:id,...selection});
+  assert.equal(setResource(state,{allianceId:id,...selection,value,reason:'Обновление показателя'}),false);assert.deepEqual(state,before);
+ }
+ unchangedOnError(state,()=>setResource(state,{allianceId:id,resource:'caps',value:a.caps,reason:''}));assert.ok(validateState(state));
 });
 test('personal experience raises alliance XP and its calculated level',()=>{
  const {state,a}=setup();adjustResource(state,{allianceId:id,resource:'xp',childId:'child-1-1',amount:200,reason:'Открытие'});assert.equal(a.xp,2040);assert.equal(a.children[0].xp,420);assert.equal(allianceLevel(state,a),5);

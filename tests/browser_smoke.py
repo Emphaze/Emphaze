@@ -49,11 +49,26 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
         page.locator('.shift-switcher').click()
     def item_action(action, item_id):
         page.locator(f'.item-card [data-action="{action}"][data-id="{item_id}"]').click()
-    # Currency and XP are independent; personal XP also raises alliance XP.
+    # Manual edits set the actual value, including zero; they do not award income.
+    earned_before = first_alliance()['earnedCaps']
+    for target in [2000,1000,0,2480]:
+        page.locator('.page-heading [data-action=adjust]').click()
+        assert page.locator('[name=value]').input_value() == str(first_alliance()['caps'])
+        page.locator('[name=value]').fill(str(target))
+        submit()
+        assert first_alliance()['caps'] == target
+        assert first_alliance()['earnedCaps'] == earned_before
+    # Selecting another alliance or an XP recipient refreshes the current value.
     page.locator('.page-heading [data-action=adjust]').click()
+    page.locator('#adjust-alliance').select_option('alliance-2')
+    assert page.locator('[name=value]').input_value() == '1920'
+    page.locator('#adjust-alliance').select_option('alliance-1')
+    assert page.locator('[name=value]').input_value() == '2480'
     page.locator('[name=resource]').select_option('xp')
+    assert page.locator('[name=value]').input_value() == '1840'
     page.locator('[name=childId]').select_option('child-1-1')
-    page.locator('[name=amount]').fill('200')
+    assert page.locator('[name=value]').input_value() == '220'
+    page.locator('[name=value]').fill('420')
     page.locator('[name=reason]').fill('Разгадала космическую загадку')
     submit()
     assert first_alliance()['xp'] == 2040
@@ -64,7 +79,8 @@ with sync_playwright() as p, tempfile.TemporaryDirectory(prefix='orbita-test-') 
     go('alliances')
     assert 'Уровень' not in page.locator('.alliance-banner').inner_text() or page.locator('.detail-stats').is_visible()
     page.locator('[data-action=adjustRole][data-role=engineers]').click()
-    page.locator('[name=amount]').fill('5')
+    assert page.locator('[name=value]').input_value() == '34'
+    page.locator('[name=value]').fill('39')
     page.locator('[name=reason]').fill('Починили станцию')
     submit()
     assert first_alliance()['functions']['engineers'] == 39

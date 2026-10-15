@@ -50,6 +50,31 @@ export function initialState(empty=false) {
 export function getAlliance(state,id) {const a=state.alliances.find(a=>a.id===id);if(!a)throw Error('Альянс не найден.');return a;}
 export function log(state,allianceId,title,detail='',kind='update') {state.events.unshift({id:uid(),allianceId,title,detail,kind,time:new Date().toISOString(),sol:state.shift.day});}
 function checkSum(value,delta,label) {return integer(value+delta,label);}
+function resourceTarget(state,{allianceId,resource,childId}) {
+ const a=getAlliance(state,allianceId),group=roles.some(role=>role.id===resource);
+ if(!group&&!['caps','xp','charge','cadiaAP'].includes(resource))throw Error('Неизвестный показатель.');
+ const child=childId?a.children.find(child=>child.id===childId):null;
+ if(childId&&(!child||resource!=='xp'))throw Error('Личный опыт изменяется только у искателя выбранного альянса.');
+ const current=child?child.xp:group?a.functions[resource]:resource==='charge'?a.interface.charge:resource==='cadiaAP'?a.planets.cadia.actionPoints:a[resource];
+ return {a,group,child,current};
+}
+export function resourceValue(state,selection) {return resourceTarget(state,selection).current;}
+export function setResource(state,{allianceId,resource,value,reason,childId}) {
+ const {a,group,child,current}=resourceTarget(state,{allianceId,resource,childId});
+ const next=integer(value,'Новое значение'),why=text(reason,'Причина',160);
+ if(next===current)return false;
+ const allianceXP=child?checkSum(a.xp,next-current,'Общий опыт альянса'):null;
+ if(child){child.xp=next;a.xp=allianceXP;}
+ else if(group)a.functions[resource]=next;
+ else if(resource==='charge'){
+  a.interface.charge=next;if(next>a.interface.maxCharge)a.interface.maxChargeKnown=false;
+  a.interface.maxCharge=Math.max(1,a.interface.maxCharge,next);
+ }else if(resource==='cadiaAP')a.planets.cadia.actionPoints=next;
+ else a[resource]=next;
+ const labels={caps:'Крышечки',xp:'Опыт',charge:'Заряд',cadiaAP:'ОД на Кадии',...Object.fromEntries(roles.map(role=>[role.id,role.id==='raiders'?'Райдеры · ОД':`${role.name} · репутация`]))};
+ log(state,allianceId,why,`${child?`${child.name} · `:''}${labels[resource]}: ${current} → ${next}`,'update');
+ return true;
+}
 export function adjustResource(state,{allianceId,resource,amount,reason,childId}) {
  const a=getAlliance(state,allianceId);const delta=integer(amount,'Изменение',-MAX_NUMBER,MAX_NUMBER);if(!delta)throw Error('Изменение не может быть нулевым.');const why=text(reason,'Причина',160);
  const group=roles.find(r=>r.id===resource);if(!group&&!['caps','xp','charge','resilience','cadiaAP'].includes(resource))throw Error('Неизвестный показатель.');
